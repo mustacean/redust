@@ -1,0 +1,10 @@
+[package]
+name = "redusty"
+version = "0.1.0"
+authors = ["Mustafa Can <56972419+mustcalypse@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+redis = "0.17.0"
