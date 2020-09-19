@@ -1,6 +1,7 @@
-// service:list -> [service_names]
+// service:list -> [service_names]  | done!
+// service.{service name} -> {host} | done!
 
-// service.{service name} -> {host}
+// service.{service_name}:events -> [event_names] | done!
 
 mod event;
 mod iredisclient;

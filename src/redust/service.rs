@@ -5,17 +5,25 @@ use std::rc::Rc;
 pub struct Service {
     name: String,
     host: String,
-    _events: Vec<Event>,
-    _provider: Rc<Box<ServiceMetaProvider>>,
+    events: Vec<Event>,
+    provider: Rc<Box<ServiceMetaProvider>>,
 }
 
 impl Service {
-    pub fn new(name: String, _provider: Rc<Box<ServiceMetaProvider>>) -> Service {
+    pub fn new(
+        name: &str,
+        host: &str,
+        provider: Rc<Box<ServiceMetaProvider>>,
+        evs: Option<Vec<Event>>,
+    ) -> Service {
         Service {
-            name,
-            host: String::default(),
-            _provider,
-            _events: Vec::new(),
+            name: name.to_owned(),
+            host: host.to_owned(),
+            provider,
+            events: match evs {
+                Some(e) => e,
+                None => Vec::new(),
+            },
         }
     }
 
@@ -26,10 +34,10 @@ impl Service {
         &self.host
     }
 
-    pub fn _get_provider(&self) -> Rc<Box<ServiceMetaProvider>> {
-        self._provider.clone()
+    pub fn get_provider(&self) -> Rc<Box<ServiceMetaProvider>> {
+        self.provider.clone()
     }
-    pub fn _get_events(&self) -> &Vec<Event> {
-        &self._events
+    pub fn get_events(&self) -> &Vec<Event> {
+        &self.events
     }
 }
