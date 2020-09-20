@@ -9,6 +9,8 @@ mod service;
 mod redis_cmd_fac;
 mod redis_exec;
 mod test_cmds;
+mod event_handler;
+mod test_pubsub;
 
 pub use event::Event;
 pub use s_meta_provider::ServiceMetaProvider;
