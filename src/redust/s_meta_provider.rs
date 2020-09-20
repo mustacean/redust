@@ -1,7 +1,7 @@
 use super::event::Event;
 use super::iredisclient::IRedisClient;
 use super::redis_cmd_fac::*;
-use super::redis_exec::{exec, quest};
+use super::redis_exec::{exec, pred, quest};
 use super::service::Service;
 use redis::Client;
 use redis::Connection;
@@ -47,8 +47,8 @@ impl ServiceMetaProvider {
         host: &str,
         events: Vec<String>,
     ) -> Result<(), ()> {
-        quest::<bool>(cmd_set_service_host(ser, host), &mut self.get_conn())?;
-        quest::<bool>(cmd_add_to_service_list(ser), &mut self.get_conn())?;
+        pred(cmd_set_service_host(ser, host), &mut self.get_conn())?;
+        pred(cmd_add_to_service_list(ser), &mut self.get_conn())?;
         self.clone().add_events(ser, events)
     }
 

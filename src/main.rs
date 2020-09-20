@@ -1,5 +1,4 @@
 mod redust;
-
 use redust::ServiceMetaProvider;
 
 fn main() {
@@ -20,16 +19,20 @@ fn exec(host: &str, serv_name: &str, events: Vec<String>) {
                 service.get_name(),
                 service.get_host()
             );
+            let evs = service.get_events();
+            for e in evs {
+                println!("[event : {}]", e.get_name());
+            }
 
             if let Ok(_) = sp.clone().remove_service(serv_name) {
-                println!("deleted!");
+                println!("service succesfuly removed!");
             }
         }
         Err(()) => {
             println!("couldn't find the service. create? (Y/N)?");
 
             if let Ok(_) = sp.clone().add_service(serv_name, &host, events) {
-                println!("created!");
+                println!("service succesfuly added!");
             }
         }
     }
