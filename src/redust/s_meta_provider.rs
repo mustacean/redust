@@ -1,16 +1,20 @@
-use crate::redust::event::Event;
-use crate::redust::iredisclient::IRedisClient;
-use crate::redust::service::Service;
+use super::event::Event;
+use super::iredisclient::IRedisClient;
+use super::redis_cmd_fac::*;
+use super::redis_exec::{exec, quest};
+use super::service::Service;
+use redis::Client;
+use redis::Connection;
 use std::rc::Rc;
 
 pub struct ServiceMetaProvider {
     client: redis::Client,
 }
 impl IRedisClient for ServiceMetaProvider {
-    fn get_client(&self) -> &redis::Client {
+    fn get_client(&self) -> &Client {
         &self.client
     }
-    fn get_conn(&self) -> redis::Connection {
+    fn get_conn(&self) -> Connection {
         self.get_client().get_connection().unwrap()
     }
 }
@@ -18,38 +22,23 @@ impl IRedisClient for ServiceMetaProvider {
 impl ServiceMetaProvider {
     pub fn provide(host: &str) -> Rc<Box<ServiceMetaProvider>> {
         Rc::new(Box::new(ServiceMetaProvider {
-            client: redis::Client::open(format!("redis://{}", host)).unwrap(),
+            client: Client::open(format!("redis://{}", host)).unwrap(),
         }))
     }
     pub fn get_service(self: Rc<Box<ServiceMetaProvider>>, ser: &str) -> Result<Service, ()> {
-        match redis::cmd("get")
-            .arg(format!("service.{}", ser).as_str())
-            .query::<String>(&mut self.get_conn())
-        {
-            Ok(host) => Ok(Service::new(
-                ser,
-                host.as_str(),
-                self.clone(),
-                self.clone().get_events(ser),
-            )),
-            _ => Err(()),
-        }
+        let host = quest::<String>(cmd_fetch_service_host(ser), &mut self.get_conn())?;
+        Ok(Service::new(
+            ser,
+            host.as_str(),
+            self.clone(),
+            self.clone().get_events(ser),
+        ))
     }
+
     pub fn remove_service(self: Rc<Box<ServiceMetaProvider>>, ser: &str) -> Result<(), ()> {
-        if redis::cmd("del")
-            .arg(format!("service.{}", ser).as_str())
-            .query::<bool>(&mut self.get_conn())
-            .unwrap()
-            && redis::cmd("srem")
-                .arg("service:list")
-                .arg(ser)
-                .query::<bool>(&mut self.get_conn())
-                .unwrap()
-        {
-            self.clone().remove_events(ser)
-        } else {
-            Err(())
-        }
+        exec(cmd_del_service_host(ser), &mut self.get_conn())?;
+        exec(cmd_rem_from_service_list(ser), &mut self.get_conn())?;
+        self.clone().remove_events(ser)
     }
 
     pub fn add_service(
@@ -57,78 +46,34 @@ impl ServiceMetaProvider {
         ser: &str,
         host: &str,
         events: Vec<String>,
-    ) -> Result<Service, ()> {
-        if redis::cmd("set")
-            .arg(format!("service.{}", ser).as_str())
-            .arg(host)
-            .query::<bool>(&mut self.get_conn())
-            .unwrap()
-            && redis::cmd("sadd")
-                .arg("service:list")
-                .arg(ser)
-                .query::<bool>(&mut self.get_conn())
-                .unwrap()
-        {
-            if let Ok(()) = self.clone().add_events(ser, events) {
-                self.get_service(ser)
-            } else {
-                Err(())
-            }
+    ) -> Result<(), ()> {
+        quest::<bool>(cmd_set_service_host(ser, host), &mut self.get_conn())?;
+        quest::<bool>(cmd_add_to_service_list(ser), &mut self.get_conn())?;
+        self.clone().add_events(ser, events)
+    }
+
+    pub fn get_events(self: Rc<Box<ServiceMetaProvider>>, ser: &str) -> Option<Vec<Event>> {
+        if let Ok(events) = quest::<Vec<String>>(cmd_fetch_events(ser), &mut self.get_conn()) {
+            use std::iter::*;
+            Some(Vec::from_iter(events.iter().map(|e| Event::new(ser, e))))
         } else {
-            Err(())
+            None
         }
     }
 
-    fn get_events(self: Rc<Box<ServiceMetaProvider>>, ser: &str) -> Option<Vec<Event>> {
-        match redis::cmd("smembers")
-            .arg(format!("service.{}:events", ser).as_str())
-            .query::<Vec<String>>(&mut self.get_conn())
-        {
-            Ok(events) => {
-                let mut result = Vec::<Event>::new();
-
-                for e in &events {
-                    result.push(Event::new(ser, e));
-                }
-
-                if result.len() > 0 {
-                    Some(result)
-                } else {
-                    None
-                }
-            }
-            _ => None,
-        }
-    }
-
-    fn add_events(
+    pub fn add_events(
         self: Rc<Box<ServiceMetaProvider>>,
         ser: &str,
         events: Vec<String>,
     ) -> Result<(), ()> {
         for e in &events {
-            if let Ok(_) = redis::cmd("sadd")
-                .arg(format!("service.{}:events", ser).as_str())
-                .arg(e)
-                .query::<bool>(&mut self.get_conn())
-            {
-                continue;
-            } else {
-                return Err(());
-            }
+            exec(cmd_add_events(ser, e), &mut self.get_conn())?;
         }
-
         Ok(())
     }
 
-    fn remove_events(self: Rc<Box<ServiceMetaProvider>>, ser: &str) -> Result<(), ()> {
-        if let Ok(_) = redis::cmd("del")
-            .arg(format!("service.{}:events", ser).as_str())
-            .query::<bool>(&mut self.get_conn())
-        {
-            Ok(())
-        } else {
-            return Err(());
-        }
+    pub fn remove_events(self: Rc<Box<ServiceMetaProvider>>, ser: &str) -> Result<(), ()> {
+        exec(cmd_del_events(ser), &mut self.get_conn())?;
+        Ok(())
     }
 }

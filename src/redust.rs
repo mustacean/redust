@@ -1,12 +1,14 @@
-// service:list -> [service_names]  | done!
-// service.{service name} -> {host} | done!
-
-// service.{service_name}:events -> [event_names] | done!
+// service:list -> [service_names] 
+// service.{service name} -> {host}
+// service.{service_name}:events -> [event_names]
 
 mod event;
 mod iredisclient;
 mod s_meta_provider;
 mod service;
+mod redis_cmd_fac;
+mod redis_exec;
+mod test_cmds;
 
 pub use event::Event;
 pub use s_meta_provider::ServiceMetaProvider;
