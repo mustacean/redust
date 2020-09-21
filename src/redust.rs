@@ -11,6 +11,7 @@ mod redis_exec;
 mod test_cmds;
 mod event_handler;
 mod test_pubsub;
+mod communication;
 
 pub use event::Event;
 pub use s_meta_provider::ServiceMetaProvider;

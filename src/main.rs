@@ -3,7 +3,7 @@ use redust::ServiceMetaProvider;
 
 fn main() {
     let host = "127.0.0.1";
-    let serv_name = "my_service";
+    let serv_name = "master";
     let events = vec![String::from("added"), String::from("deleted")];
 
     exec(host, serv_name, events);
