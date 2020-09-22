@@ -10,6 +10,7 @@ impl Service {
         Antenna::<'t> {
             service: self,
             subscriptions,
+            event_pipeline: std::sync::mpsc::channel(),
         }
     }
 }
@@ -21,6 +22,10 @@ pub struct Caster<'t> {
 pub struct Antenna<'t> {
     service: &'t Service,
     subscriptions: &'t Vec<Event>,
+    event_pipeline: (
+        std::sync::mpsc::Sender<(Event, String)>,
+        std::sync::mpsc::Receiver<(Event, String)>,
+    ),
 }
 
 impl<'t> Caster<'t> {
@@ -28,7 +33,7 @@ impl<'t> Caster<'t> {
     //     Caster::<'t> { service }
     // }
 
-    pub fn invoke(&'t self, e: &str, msg: &str) -> Result<i32, ()> {
+    pub fn invoke(&self, e: &str, msg: &str) -> Result<i32, ()> {
         let mut exist = false;
 
         for i in self.service.get_events() {
@@ -59,21 +64,26 @@ impl<'t> Antenna<'t> {
     //         subscriptions,
     //     }
     // }
-    pub fn receive(&'t self) -> Result<String, ()> {
+    pub fn receive(&self) {
         use super::iredisclient::IRedisClient;
-        let mut conn = self.service.get_provider().get_conn();
-        let mut pubsub = conn.as_pubsub();
-        if let Ok(_) = pubsub.subscribe(self.subscriptions.first().unwrap().get_name()) {
-            // --- async part
-            let msg = pubsub.get_message().unwrap();
-            Ok(format!(
-                "ch : {} ;; msg : {}",
-                msg.get_channel_name(),
-                msg.get_payload::<String>().unwrap()
-            ))
-        // --- sync part
-        } else {
-            Err(())
+
+        for ev in self.subscriptions {
+            let sender = self.event_pipeline.0.clone();
+            let event_arg = Event::new(ev.get_owner(), ev.get_name());
+            let mut conn = self.service.get_provider().get_conn();
+            std::thread::spawn(move || {
+                let mut pubsub = conn.as_pubsub();
+                if let Ok(_) = pubsub.subscribe(event_arg.get_name()) {
+                    let msg = pubsub.get_message().unwrap();
+                    sender
+                        .send((event_arg, msg.get_payload().unwrap()))
+                        .unwrap();
+                }
+            });
+        }
+        loop {
+            let (ev, arg) = self.event_pipeline.1.recv().unwrap();
+            println!("Received.. \n e : {}\n arg : {}", ev.get_name(), arg);
         }
     }
 }
@@ -88,12 +98,8 @@ fn test_antenna() {
         .get_service("master")
         .unwrap();
 
-    //let mut my_antenna = Antenna::new(&mca_service, other_service.get_events());
     let my_antenna = mca_service.get_antenna(other_service.get_events());
-
-    let result = my_antenna.receive();
-
-    println!("received a message --> {}", result.unwrap());
+    my_antenna.receive();
 }
 
 #[test]
@@ -102,17 +108,13 @@ fn test_cast() {
         .get_service("mca_service")
         .unwrap();
 
-    //let my_caster = Caster::new(&mca_service);
     let my_caster = mca_service.get_caster();
 
     let msg = "hello, world!";
-
     let result = my_caster.invoke("my_birth", msg);
 
     println!("published a message --> {}", result.unwrap());
 }
-
-
 
 // struct EventMetaProvider;
 
