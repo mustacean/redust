@@ -6,6 +6,12 @@ fn test_get_service() {
 }
 
 #[test]
+fn test_get_services() {
+    let sp = super::ServiceMetaProvider::provide("127.0.0.1");
+    assert_ne!(sp.get_services().unwrap().len(), 0);
+}
+
+#[test]
 fn test_add_service() {
     let sp = super::ServiceMetaProvider::provide("127.0.0.1");
     let _ = sp

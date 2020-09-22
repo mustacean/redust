@@ -1,5 +1,11 @@
 use redis::Cmd;
 
+pub fn cmd_fetch_service_names() -> Cmd {
+    let mut cmd = redis::cmd("smembers");
+    cmd.arg("service:list");
+    cmd
+}
+
 pub fn cmd_del_events(ser: &str) -> Cmd {
     let mut cmd: redis::Cmd = redis::cmd("del");
     cmd.arg(format!("service.{}:events", ser).as_str());

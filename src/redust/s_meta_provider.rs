@@ -25,6 +25,18 @@ impl ServiceMetaProvider {
             client: Client::open(format!("redis://{}", host)).unwrap(),
         }))
     }
+
+    pub fn get_services(self: Rc<Box<ServiceMetaProvider>>) -> Result<Vec<Service>, ()> {
+        let service_names = quest::<Vec<String>>(cmd_fetch_service_names(), &mut self.get_conn())?;
+        use std::iter::*;
+
+        Ok(Vec::from_iter(
+            service_names
+                .iter()
+                .map(|e| self.clone().get_service(e).unwrap()),
+        ))
+    }
+
     pub fn get_service(self: Rc<Box<ServiceMetaProvider>>, ser: &str) -> Result<Service, ()> {
         let host = quest::<String>(cmd_fetch_service_host(ser), &mut self.get_conn())?;
         Ok(Service::new(

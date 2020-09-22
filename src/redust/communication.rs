@@ -1,5 +1,4 @@
 use crate::redust::event::Event;
-use crate::redust::event_handler::EventHandler;
 use crate::redust::service::Service;
 
 impl Service {
@@ -29,7 +28,7 @@ impl<'t> Caster<'t> {
     //     Caster::<'t> { service }
     // }
 
-    fn publish(&self, e: &str, msg: &str) -> Result<i32, ()> {
+    pub fn invoke(&'t self, e: &str, msg: &str) -> Result<i32, ()> {
         let mut exist = false;
 
         for i in self.service.get_events() {
@@ -60,11 +59,11 @@ impl<'t> Antenna<'t> {
     //         subscriptions,
     //     }
     // }
-    fn receive(&mut self, e: &Event) -> Result<String, ()> {
+    pub fn receive(&'t self) -> Result<String, ()> {
         use super::iredisclient::IRedisClient;
         let mut conn = self.service.get_provider().get_conn();
         let mut pubsub = conn.as_pubsub();
-        if let Ok(_) = pubsub.subscribe(e.get_name()) {
+        if let Ok(_) = pubsub.subscribe(self.subscriptions.first().unwrap().get_name()) {
             // --- async part
             let msg = pubsub.get_message().unwrap();
             Ok(format!(
@@ -90,9 +89,9 @@ fn test_antenna() {
         .unwrap();
 
     //let mut my_antenna = Antenna::new(&mca_service, other_service.get_events());
-    let mut my_antenna = mca_service.get_antenna(other_service.get_events());
+    let my_antenna = mca_service.get_antenna(other_service.get_events());
 
-    let result = my_antenna.receive(other_service.get_events().first().unwrap());
+    let result = my_antenna.receive();
 
     println!("received a message --> {}", result.unwrap());
 }
@@ -108,7 +107,25 @@ fn test_cast() {
 
     let msg = "hello, world!";
 
-    let result = my_caster.publish("my_birth", msg);
+    let result = my_caster.invoke("my_birth", msg);
 
     println!("published a message --> {}", result.unwrap());
 }
+
+
+
+// struct EventMetaProvider;
+
+// struct EventLogs {
+//     provider: std::rc::Rc<Box<EventMetaProvider>>,
+// }
+
+// impl EventLogs {
+//     pub fn add(eve: &Event, exp: u32) {
+//         todo!()
+//     }
+// }
+
+// struct ApiEndPoint<'t> {
+//     trlo: &'t EventLogs,
+// }

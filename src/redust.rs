@@ -9,8 +9,8 @@ mod service;
 mod redis_cmd_fac;
 mod redis_exec;
 mod test_cmds;
+// mod test_pubsub;
 mod event_handler;
-mod test_pubsub;
 mod communication;
 
 pub use event::Event;
