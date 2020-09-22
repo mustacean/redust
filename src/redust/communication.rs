@@ -34,26 +34,27 @@ impl<'t> Caster<'t> {
     // }
 
     pub fn invoke(&self, e: &str, msg: &str) -> Result<i32, ()> {
-        let mut exist = false;
-
-        for i in self.service.get_events() {
-            if e == i.get_name() {
-                exist = true;
-                break;
+        fn _get_event_by_name(evs: &Vec<Event>, e: &str) -> Option<Event> {
+            for i in evs {
+                if e == i.get_name() {
+                    return Some(i.clone());
+                }
             }
+            None
         }
-        if !exist {
-            println!("this service doesn't contain the specified event.");
-            return Err(());
+        if let Some(e) = _get_event_by_name(self.service.get_events(), e) {
+            use super::iredisclient::IRedisClient;
+            use redis::*;
+            return Ok(self
+                .service
+                .get_provider()
+                .get_conn()
+                .publish::<String, &str, i32>(e.to_string(), msg)
+                .unwrap());
         }
-        use super::iredisclient::IRedisClient;
-        use redis::*;
-        Ok(self
-            .service
-            .get_provider()
-            .get_conn()
-            .publish::<&str, &str, i32>(e, msg)
-            .unwrap())
+
+        println!("this service doesn't contain the specified event.");
+        Err(())
     }
 }
 
@@ -64,7 +65,7 @@ impl<'t> Antenna<'t> {
     //         subscriptions,
     //     }
     // }
-    pub fn receive(&self) {
+    pub fn receive(&self) -> std::sync::mpsc::Iter<(Event, String)> {
         use super::iredisclient::IRedisClient;
 
         for ev in self.subscriptions {
@@ -73,18 +74,18 @@ impl<'t> Antenna<'t> {
             let mut conn = self.service.get_provider().get_conn();
             std::thread::spawn(move || {
                 let mut pubsub = conn.as_pubsub();
-                if let Ok(_) = pubsub.subscribe(event_arg.get_name()) {
-                    let msg = pubsub.get_message().unwrap();
-                    sender
-                        .send((event_arg, msg.get_payload().unwrap()))
-                        .unwrap();
+                if let Ok(_) = pubsub.subscribe(event_arg.to_string()) {
+                    loop {
+                        let msg = pubsub.get_message().unwrap();
+                        sender
+                            .send((event_arg.clone(), msg.get_payload().unwrap()))
+                            .unwrap();
+                    }
                 }
             });
         }
-        loop {
-            let (ev, arg) = self.event_pipeline.1.recv().unwrap();
-            println!("Received.. \n e : {}\n arg : {}", ev.get_name(), arg);
-        }
+
+        self.event_pipeline.1.iter()
     }
 }
 
@@ -99,7 +100,10 @@ fn test_antenna() {
         .unwrap();
 
     let my_antenna = mca_service.get_antenna(other_service.get_events());
-    my_antenna.receive();
+
+    for (ev, arg) in my_antenna.receive() {
+        println!("Received.. \n e : {}\n arg : {}", ev.get_name(), arg);
+    }
 }
 
 #[test]
@@ -111,6 +115,7 @@ fn test_cast() {
     let my_caster = mca_service.get_caster();
 
     let msg = "hello, world!";
+
     let result = my_caster.invoke("my_birth", msg);
 
     println!("published a message --> {}", result.unwrap());
