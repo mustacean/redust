@@ -16,15 +16,18 @@ impl<'t> IMessage<'t> for User<'t> {
         User::<'t> { id, payload }
     }
     fn get_id(&self) -> uuid::Uuid {
-        todo!()
+        self.id
     }
     fn get_payload(&self) -> &'t [u8] {
-        todo!()
+        self.payload
     }
 }
+
 #[test]
 fn test_message() {
     let buffer = [0; 1024];
 
     let me = User::new(Uuid::new_v4(), &buffer);
+
+    println!("id : {}", me.get_id());
 }
