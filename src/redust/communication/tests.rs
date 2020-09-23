@@ -7,7 +7,7 @@ fn test_antenna() {
     let mca_service = spr.clone().get_service("mca_service").unwrap();
     let other_service = spr.clone().get_service("master").unwrap();
 
-    let mut my_antenna = mca_service.get_antenna(other_service.get_events());
+    let my_antenna = mca_service.get_antenna(other_service.get_events());
 
     for (ev, arg) in my_antenna.launch().receive() {
         println!("Received.. \n e : {}\n arg : {}", ev.get_name(), arg);

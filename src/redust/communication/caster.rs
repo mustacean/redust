@@ -6,10 +6,6 @@ pub struct Caster<'t> {
 }
 
 impl<'t> Caster<'t> {
-    // pub fn new(service: &'t Service) -> Caster<'t> {
-    //     Caster::<'t> { service }
-    // }
-
     pub fn invoke(&self, e: &Event, msg: &str) -> Result<i32, ()> {
         fn _get_if_contains<'t>(evs: &'t Vec<Event>, e: &'t Event) -> Option<&'t Event> {
             for i in evs {
