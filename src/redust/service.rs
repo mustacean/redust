@@ -1,43 +1,11 @@
-use crate::redust::event::Event;
-use crate::redust::s_meta_provider::ServiceMetaProvider;
-use std::rc::Rc;
+mod event_t;
+mod s_meta_provider;
+mod service_t;
 
-pub struct Service {
-    name: String,
-    host: String,
-    events: Vec<Event>,
-    provider: Rc<Box<ServiceMetaProvider>>,
-}
+pub use event_t::Event;
+pub use s_meta_provider::ServiceMetaProvider;
+pub use service_t::Service;
 
-impl Service {
-    pub fn new(
-        name: &str,
-        host: &str,
-        provider: Rc<Box<ServiceMetaProvider>>,
-        evs: Option<Vec<Event>>,
-    ) -> Service {
-        Service {
-            name: name.to_owned(),
-            host: host.to_owned(),
-            provider,
-            events: match evs {
-                Some(e) => e,
-                None => Vec::new(),
-            },
-        }
-    }
-
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
-    pub fn get_host(&self) -> &str {
-        &self.host
-    }
-
-    pub fn get_provider(&self) -> Rc<Box<ServiceMetaProvider>> {
-        self.provider.clone()
-    }
-    pub fn get_events(&self) -> &Vec<Event> {
-        &self.events
-    }
-}
+// service:list -> [service_names]
+// service.{service name} -> {host}
+// service.{service_name}:events -> [event_names]

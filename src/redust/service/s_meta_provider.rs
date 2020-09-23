@@ -1,10 +1,6 @@
-use super::event::Event;
-use super::iredisclient::IRedisClient;
-use super::redis_cmd_fac::*;
-use super::redis_exec::{exec, pred, quest};
-use super::service::Service;
-use redis::Client;
-use redis::Connection;
+use crate::redust::rd_tools::{redis_commands::*, redis_exec::*, IRedisClient};
+use crate::redust::service::{Event, Service};
+use redis::{Client, Connection};
 use std::rc::Rc;
 
 pub struct ServiceMetaProvider {
