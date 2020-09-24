@@ -1,5 +1,5 @@
-use crate::redust::rd_tools::IRedisClient;
-use crate::redust::service::{Event, Service};
+use crate::rd_tools::IRedisClient;
+use crate::service::{Event, Service};
 use std::cell::Cell;
 
 pub struct Antenna<'t> {

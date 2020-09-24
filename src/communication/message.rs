@@ -1,4 +1,4 @@
-use crate::redust::service::Event;
+use crate::service::Event;
 use std::io::BufReader;
 use uuid::Uuid;
 

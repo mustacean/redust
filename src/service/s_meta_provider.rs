@@ -1,5 +1,5 @@
-use crate::redust::rd_tools::{redis_commands::*, redis_exec::*, IRedisClient};
-use crate::redust::service::{Event, Service};
+use crate::rd_tools::{redis_commands::*, redis_exec::*, IRedisClient};
+use crate::service::{Event, Service};
 use redis::{Client, Connection};
 use std::rc::Rc;
 

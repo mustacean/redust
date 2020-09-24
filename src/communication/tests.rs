@@ -1,4 +1,4 @@
-use crate::redust::service::ServiceMetaProvider;
+use crate::service::ServiceMetaProvider;
 
 #[test]
 fn test_antenna() {

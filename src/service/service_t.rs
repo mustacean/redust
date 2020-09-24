@@ -1,4 +1,4 @@
-use crate::redust::service::{Event, ServiceMetaProvider};
+use crate::service::{Event, ServiceMetaProvider};
 use std::rc::Rc;
 
 pub struct Service {

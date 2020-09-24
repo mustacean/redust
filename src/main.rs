@@ -1,4 +1,6 @@
-mod redust;
+pub mod communication;
+mod rd_tools;
+pub mod service;
 
 fn main() {
     let host = "127.0.0.1";
@@ -6,7 +8,7 @@ fn main() {
 }
 
 fn list_services(host: &str) {
-    let sp = redust::service::ServiceMetaProvider::provide(host);
+    let sp = crate::service::ServiceMetaProvider::provide(host);
 
     match sp.get_services() {
         Ok(x) => {
