@@ -53,7 +53,7 @@ impl ServiceMetaProvider {
         self: Rc<Box<ServiceMetaProvider>>,
         ser: &str,
         host: &str,
-        events: Vec<String>,
+        events: Vec<&str>,
     ) -> Result<(), ()> {
         pred(cmd_set_service_host(ser, host), &mut self.get_conn())?;
         pred(cmd_add_to_service_list(ser), &mut self.get_conn())?;
@@ -72,7 +72,7 @@ impl ServiceMetaProvider {
     pub fn add_events(
         self: Rc<Box<ServiceMetaProvider>>,
         ser: &str,
-        events: Vec<String>,
+        events: Vec<&str>,
     ) -> Result<(), ()> {
         for e in &events {
             exec(cmd_add_events(ser, e), &mut self.get_conn())?;
