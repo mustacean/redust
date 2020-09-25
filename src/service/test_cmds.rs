@@ -18,7 +18,7 @@ fn test_add_service() {
         .add_service(
             "mca_service",
             "127.0.0.1",
-            vec![String::from("2pac_murder"), String::from("my_birth")],
+            vec![&String::from("2pac_murder"), &String::from("my_birth")],
         )
         .unwrap();
     assert_eq!(true, true);
@@ -44,7 +44,7 @@ fn test_add_events() {
     let _ = sp
         .add_events(
             "mca_service",
-            vec![String::from("2pac_murder"), String::from("my_birth")],
+            vec![&String::from("2pac_murder"), &String::from("my_birth")],
         )
         .unwrap();
     assert_eq!(true, true);

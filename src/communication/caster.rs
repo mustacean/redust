@@ -1,8 +1,15 @@
 use crate::rd_tools::IRedisClient;
+use crate::service::IServiceOwned;
 use crate::service::{Event, Service};
 
 pub struct Caster<'t> {
     service: &'t Service,
+}
+
+impl<'t> IServiceOwned<'t> for Caster<'t> {
+    fn get_service(&self) -> &'t Service {
+        self.service
+    }
 }
 
 impl<'t> Caster<'t> {

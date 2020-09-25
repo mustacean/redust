@@ -1,6 +1,6 @@
 mod antenna;
 mod caster;
-mod message;
+mod envoy;
 mod tests;
 
 pub use antenna::Antenna;

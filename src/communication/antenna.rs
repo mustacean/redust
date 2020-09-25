@@ -1,4 +1,5 @@
 use crate::rd_tools::IRedisClient;
+use crate::service::IServiceOwned;
 use crate::service::{Event, Service};
 use std::cell::Cell;
 
@@ -10,6 +11,11 @@ pub struct Antenna<'t> {
         std::sync::mpsc::Receiver<(Event, String)>,
     ),
     is_launched: Cell<bool>,
+}
+impl<'t> IServiceOwned<'t> for Antenna<'t> {
+    fn get_service(&self) -> &'t Service {
+        self.service
+    }
 }
 
 impl<'t> Antenna<'t> {
