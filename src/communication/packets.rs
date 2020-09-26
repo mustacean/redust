@@ -3,8 +3,8 @@ use crate::communication::Caster;
 use crate::service::Event;
 use crate::service::IServiceOwned;
 use crate::service::Service;
-use crate::service::ServiceMetaProvider;
 use std::io::Read;
+use std::io::Write;
 use uuid::Uuid;
 
 const BUFFER_SIZE: usize = 64;
@@ -48,7 +48,7 @@ impl<'t> Packets<'t> {
     }
 
     pub fn send(&'t self, st: impl Read + Send + 'static) -> Result<i32, ()> {
-        if let Ok(i) = self
+        if let Ok(_) = self
             .caster
             .invoke(self.event, &format!("{}", self.message_id))
         {
@@ -70,53 +70,29 @@ impl<'t> Caster<'t> {
 }
 
 impl<'t> Antenna<'t> {
-    pub fn receive_packets(&'t self, time_out: u32, call_back: &dyn Fn(Event, &str)) {
+    pub fn receive_packets(
+        &'t self,
+        id: String,
+        time_out: u32,
+        mut wr: impl Write + Send + 'static,
+    ) {
         use crate::rd_tools::IRedisClient;
-        for (e, id) in self.receive() {
-            let mut conn = self.get_service().get_provider().get_conn();
-            //std::thread::spawn(move || {
-            loop {
-                if let Ok(re) = redis::cmd("blpop")
-                    .arg(id.clone())
-                    .arg(time_out)
-                    .query::<Option<Vec<String>>>(&mut conn)
-                {
-                    if let Some(x) = re {
-                        (call_back)(e.clone(), &x[x.len() - 1]);
-                    //println!("{}", x[x.len() - 1]);
-                    } else {
+        let mut conn = self.get_service().get_provider().get_conn();
+        std::thread::spawn(move || loop {
+            if let Ok(re) = redis::cmd("blpop")
+                .arg(id.clone())
+                .arg(time_out)
+                .query::<Option<Vec<String>>>(&mut conn)
+            {
+                if let Some(x) = re {
+                    if let Err(_) = wr.write(&x[x.len() - 1].as_bytes()) {
                         break;
                     }
+                    wr.flush().unwrap();
+                } else {
+                    break;
                 }
             }
-            //});
-        }
+        });
     }
-}
-
-#[test]
-fn test_send_envoy() {
-    let spr = ServiceMetaProvider::provide("127.0.0.1");
-    let mca_service = spr.clone().get_service("mca_service").unwrap();
-    let caster = mca_service.get_caster();
-    caster
-        .prepare_packets(&mca_service.get_events()[1])
-        .send(
-            "hello, world!, today it's the day that 
-            I be blowin' up like a bubble."
-                .as_bytes(),
-        )
-        .unwrap();
-}
-
-#[test]
-
-fn test_receive_envoy() {
-    let spr = ServiceMetaProvider::provide("127.0.0.1");
-    let mca_service = spr.clone().get_service("mca_service").unwrap();
-    let ante = mca_service.get_antenna(mca_service.get_events());
-    ante.launch();
-    ante.receive_packets(7, &|e, m| {
-        println!("event : {} \npacket : {}", e.to_string(), m);
-    });
 }

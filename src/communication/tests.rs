@@ -29,3 +29,30 @@ fn test_cast() {
 
     assert_ne!(res + result, 0);
 }
+
+#[test]
+fn test_send_envoy() {
+    let spr = ServiceMetaProvider::provide("127.0.0.1");
+    let mca_service = spr.clone().get_service("mca_service").unwrap();
+    let caster = mca_service.get_caster();
+    caster
+        .prepare_packets(&mca_service.get_events()[1])
+        .send(
+            "hello, world!, today it's the day that 
+            I be blowin' up like a bubble."
+                .as_bytes(),
+        )
+        .unwrap();
+}
+
+#[test]
+
+fn test_receive_envoy() {
+    let spr = ServiceMetaProvider::provide("127.0.0.1");
+    let mca_service = spr.clone().get_service("mca_service").unwrap();
+    let ante = mca_service.get_antenna(mca_service.get_events());
+    ante.launch();
+    for (_, id) in ante.receive() {
+        ante.receive_packets(id, 3, std::io::stdout());
+    }
+}
