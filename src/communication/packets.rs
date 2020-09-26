@@ -7,41 +7,42 @@ use crate::service::ServiceMetaProvider;
 use std::io::Read;
 use uuid::Uuid;
 
-const BUFFER_SIZE: usize = 1024;
+const BUFFER_SIZE: usize = 64;
 
-pub struct Envoy<'t> {
+pub struct Packets<'t> {
     message_id: Uuid,
     caster: &'t Caster<'t>,
     event: &'t Event,
 }
 
-impl<'t> IServiceOwned<'t> for Envoy<'t> {
+impl<'t> IServiceOwned<'t> for Packets<'t> {
     fn get_service(&self) -> &'t Service {
         self.caster.get_service()
     }
 }
 
-impl<'t> Envoy<'t> {
-    fn send_buffers(&'t self, mut st: impl Read + Send + 'static) -> std::thread::JoinHandle<()> {
+impl<'t> Packets<'t> {
+    fn send_buffers(
+        &'t self,
+        mut st: impl Read + Send + 'static,
+    ) -> std::thread::JoinHandle<Result<i32, ()>> {
         use crate::rd_tools::IRedisClient;
-        use redis::*;
         let mut conn = self.get_service().get_provider().get_conn();
         let id = format!("{}", self.message_id);
         std::thread::spawn(move || {
-            let mut ct = 0;
             let mut buffer = &mut [0u8; BUFFER_SIZE];
-            while ct < 3 {
+            loop {
                 if let Ok(i) = st.read(buffer) {
-                    redis::cmd("rpush")
-                        .arg(/*id*/ "test")
+                    if let Ok(rx) = redis::cmd("rpush")
+                        .arg(id.clone())
                         .arg::<&[u8]>(&mut buffer[0..i])
                         .query::<i32>(&mut conn)
-                        .unwrap();
-                    if i < buffer.len() {
-                        break;
+                    {
+                        if i < buffer.len() {
+                            return Ok(rx);
+                        }
                     }
                 }
-                ct += 1;
             }
         })
     }
@@ -51,16 +52,16 @@ impl<'t> Envoy<'t> {
             .caster
             .invoke(self.event, &format!("{}", self.message_id))
         {
-            self.send_buffers(st).join().unwrap();
-            return Ok(i);
+            self.send_buffers(st).join().unwrap()
+        } else {
+            Err(())
         }
-        Err(())
     }
 }
 
 impl<'t> Caster<'t> {
-    pub fn assign_envoy(&'t self, event: &'t Event) -> Envoy<'t> {
-        Envoy::<'t> {
+    pub fn prepare_packets(&'t self, event: &'t Event) -> Packets<'t> {
+        Packets::<'t> {
             message_id: Uuid::new_v4(),
             caster: self,
             event,
@@ -69,32 +70,27 @@ impl<'t> Caster<'t> {
 }
 
 impl<'t> Antenna<'t> {
-    pub fn receive_envoy(&'t self, time_out: u32) {
+    pub fn receive_packets(&'t self, time_out: u32, call_back: &dyn Fn(Event, &str)) {
         use crate::rd_tools::IRedisClient;
-        use std::iter::*;
-        //for (event, id) in self.receive() {
-        let mut conn = self.get_service().get_provider().get_conn();
-        std::thread::spawn(move || {
+        for (e, id) in self.receive() {
+            let mut conn = self.get_service().get_provider().get_conn();
+            //std::thread::spawn(move || {
             loop {
-                if let Ok(re) = redis::cmd("brpop")
-                    .arg(/*id*/ "test")
+                if let Ok(re) = redis::cmd("blpop")
+                    .arg(id.clone())
                     .arg(time_out)
                     .query::<Option<Vec<String>>>(&mut conn)
                 {
                     if let Some(x) = re {
-                        //println!("{}", x.last().unwrap());
-                        for i in 0..x.len() {
-                            println!("{}", x[i]);
-                        }
+                        (call_back)(e.clone(), &x[x.len() - 1]);
+                    //println!("{}", x[x.len() - 1]);
                     } else {
                         break;
                     }
                 }
             }
-        })
-        .join()
-        .unwrap();
-        //}
+            //});
+        }
     }
 }
 
@@ -104,23 +100,10 @@ fn test_send_envoy() {
     let mca_service = spr.clone().get_service("mca_service").unwrap();
     let caster = mca_service.get_caster();
     caster
-        .assign_envoy(&mca_service.get_events()[1])
+        .prepare_packets(&mca_service.get_events()[1])
         .send(
-            "hello, world!, lre werwer ower we krwekrwerrwwr \
-        weör wlreöw leörlw eröwler öwleör lewörl öewlrö wqlr öw\
-        elröalf  lwpelrwp leprlw perlwpel rpwle prlwep lrpewl prlw\
-        e prlwpe lrpwle rplwqepr lqwplr p23l45p25p34p65lo3 4py6l45p \
-        lypslrxövlöm şs okgtskrt poakto kapotk pek\
-rwerw eqwepqw pewqe qpw wle pqlwe\
-
- vroewrwoerow erpewrlw ep tlwtwt
- r tre
- te
- rt
- er
- te
- rtrt phtrdğphoğpsdotğph odsğpohğpsotğph rsh posroh
-  gtpreogtsre gsses"
+            "hello, world!, today it's the day that 
+            I be blowin' up like a bubble."
                 .as_bytes(),
         )
         .unwrap();
@@ -133,5 +116,7 @@ fn test_receive_envoy() {
     let mca_service = spr.clone().get_service("mca_service").unwrap();
     let ante = mca_service.get_antenna(mca_service.get_events());
     ante.launch();
-    ante.receive_envoy(15);
+    ante.receive_packets(7, &|e, m| {
+        println!("event : {} \npacket : {}", e.to_string(), m);
+    });
 }
