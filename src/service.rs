@@ -1,11 +1,10 @@
+mod endpoint_t;
 mod event_t;
-mod s_meta_provider;
 mod service_owned;
 mod service_t;
-mod test_cmds;
 
+pub use endpoint_t::Endpoint;
 pub use event_t::Event;
-pub use s_meta_provider::ServiceMetaProvider;
 pub use service_owned::IServiceOwned;
 pub use service_t::Service;
 

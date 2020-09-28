@@ -1,5 +1,7 @@
+mod exec_quest;
 mod iredisclient;
-pub mod redis_commands;
-pub mod redis_exec;
+mod pubsub;
+mod pushpop;
+mod service_cmds;
 
 pub use iredisclient::IRedisClient;

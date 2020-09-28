@@ -1,42 +1,31 @@
-use crate::service::{Event, ServiceMetaProvider};
-use std::rc::Rc;
+use crate::communication::{Receiver, Sender};
 
-pub struct Service {
-    name: String,
-    host: String,
-    events: Vec<Event>,
-    provider: Rc<Box<ServiceMetaProvider>>,
+pub struct Service<'t> {
+    name: &'t str,
+    host: &'t str,
+    sender: Option<Box<Sender<'t>>>,
+    receiver: Option<Box<Receiver<'t>>>,
 }
 
-impl Service {
-    pub fn new(
-        name: &str,
-        host: &str,
-        provider: Rc<Box<ServiceMetaProvider>>,
-        evs: Option<Vec<Event>>,
-    ) -> Service {
-        Service {
-            name: name.to_owned(),
-            host: host.to_owned(),
-            provider,
-            events: match evs {
-                Some(e) => e,
-                None => Vec::new(),
-            },
-        }
-    }
-
+impl<'t> Service<'t> {
     pub fn get_name(&self) -> &str {
         &self.name
     }
     pub fn get_host(&self) -> &str {
         &self.host
     }
-
-    pub fn get_provider(&self) -> Rc<Box<ServiceMetaProvider>> {
-        self.provider.clone()
+    pub fn get_sender(&self) -> &Sender {
+        self.sender.as_ref().unwrap()
     }
-    pub fn get_events(&self) -> &Vec<Event> {
-        &self.events
+    pub fn get_receiver(&self) -> &Receiver {
+        self.receiver.as_ref().unwrap()
+    }
+    pub fn new(name: &'t str, host: &'t str) -> Service<'t> {
+        Service::<'t> {
+            name,
+            host,
+            sender: None,
+            receiver: None,
+        }
     }
 }

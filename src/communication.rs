@@ -1,7 +1,5 @@
-mod antenna;
-mod caster;
-mod packets;
-mod tests;
+mod inbound;
+mod outbound;
 
-pub use antenna::Antenna;
-pub use caster::Caster;
+pub use inbound::Receiver;
+pub use outbound::Sender;
