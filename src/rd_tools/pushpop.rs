@@ -1,18 +1,22 @@
+use redis::cmd;
+use redis::Connection;
+use std::io::Read;
+use std::io::Write;
+use std::thread::spawn;
 use std::thread::JoinHandle;
 
 const BUFFER_SIZE: usize = 64;
 
-// reads st stream pushing buffers to the list named @id
-pub fn push_buffers(
-    mut conn: redis::Connection,
+pub fn rpush_buffers(
+    mut conn: Connection,
     list_name: &'static str,
-    mut st: impl std::io::Read + Send + 'static,
+    mut st: impl Read + Send + 'static,
 ) -> JoinHandle<Result<i32, ()>> {
-    std::thread::spawn(move || {
+    spawn(move || {
         let mut buffer = &mut [0u8; BUFFER_SIZE];
         loop {
             if let Ok(i) = st.read(buffer) {
-                if let Ok(rx) = redis::cmd("rpush")
+                if let Ok(rx) = cmd("rpush")
                     .arg(list_name)
                     .arg::<&[u8]>(&mut buffer[0..i])
                     .query::<i32>(&mut conn)
@@ -26,16 +30,14 @@ pub fn push_buffers(
     })
 }
 
-// this reads(pop) the response from the list named @id
-// which was pushed by the target_endpoint.
 pub fn blpop_buffers(
-    mut conn: redis::Connection,
+    mut conn: Connection,
     list_name: &'static str,
     time_out: u32,
-    mut wr: impl std::io::Write + Send + 'static,
+    mut wr: impl Write + Send + 'static,
 ) -> JoinHandle<()> {
-    std::thread::spawn(move || loop {
-        if let Ok(re) = redis::cmd("blpop")
+    spawn(move || loop {
+        if let Ok(re) = cmd("blpop")
             .arg(list_name)
             .arg(time_out)
             .query::<Option<Vec<String>>>(&mut conn)
@@ -50,4 +52,26 @@ pub fn blpop_buffers(
             }
         }
     })
+}
+
+fn get_default_con() -> Connection {
+    redis::Client::open("redis://127.0.0.1/")
+        .unwrap()
+        .get_connection()
+        .unwrap()
+}
+
+#[test]
+fn test_blpop() {
+    blpop_buffers(get_default_con(), "foo", 5, std::io::stdout())
+        .join()
+        .unwrap();
+}
+
+#[test]
+fn test_rpush() {
+    rpush_buffers(get_default_con(), "foo", "what's up dude!".as_bytes())
+        .join()
+        .unwrap()
+        .unwrap();
 }

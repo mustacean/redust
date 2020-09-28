@@ -4,8 +4,8 @@ use crate::service::{Endpoint, Event, IServiceOwned, Service};
 pub struct Receiver<'t> {
     client: redis::Client,
     service: &'t Service<'t>,
-    subscriptions: Option<Vec<Event>>,
     endpoints: Option<Vec<Endpoint>>,
+    subscriptions: Option<Vec<Event>>,
 }
 impl<'t> IServiceOwned<'t> for Receiver<'t> {
     fn get_service(&self) -> &'t Service {

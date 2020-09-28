@@ -3,6 +3,13 @@ pub struct Event {
     name: String,
 }
 
+pub fn new_event(owner: &str, name: &str) -> Event {
+    Event {
+        owner: owner.to_owned(),
+        name: name.to_owned(),
+    }
+}
+
 impl Clone for Event {
     fn clone(&self) -> Event {
         Event {
@@ -11,19 +18,10 @@ impl Clone for Event {
         }
     }
 }
-
 impl Event {
-    pub fn new(owner: &str, name: &str) -> Event {
-        Event {
-            owner: owner.to_owned(),
-            name: name.to_owned(),
-        }
-    }
-
     pub fn get_owner(&self) -> &str {
         &self.owner
     }
-
     pub fn get_name(&self) -> &str {
         &self.name
     }

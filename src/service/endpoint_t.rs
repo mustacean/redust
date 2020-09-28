@@ -3,6 +3,13 @@ pub struct Endpoint {
     name: String,
 }
 
+pub fn new_endpoint(owner: &str, name: &str) -> Endpoint {
+    Endpoint {
+        owner: owner.to_owned(),
+        name: name.to_owned(),
+    }
+}
+
 impl Clone for Endpoint {
     fn clone(&self) -> Endpoint {
         Endpoint {
@@ -13,13 +20,6 @@ impl Clone for Endpoint {
 }
 
 impl Endpoint {
-    pub fn new(owner: &str, name: &str) -> Endpoint {
-        Endpoint {
-            owner: owner.to_owned(),
-            name: name.to_owned(),
-        }
-    }
-
     pub fn get_owner(&self) -> &str {
         &self.owner
     }

@@ -13,8 +13,12 @@ pub fn receive(
     })
 }
 
-pub fn publish(mut conn: Connection, ch_name: &str, msg: &str) -> RedisResult<i32> {
-    conn.publish::<&str, &str, i32>(ch_name, msg)
+pub fn publish<T: redis::ToRedisArgs>(
+    mut conn: Connection,
+    ch_name: &str,
+    msg: T,
+) -> RedisResult<i32> {
+    conn.publish::<&str, T, i32>(ch_name, msg)
 }
 
 fn get_default_con() -> Connection {
