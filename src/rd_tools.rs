@@ -5,3 +5,5 @@ mod pubsub;
 mod pushpop;
 
 pub use iredisclient::IRedisClient;
+pub use pubsub::{publish, receive};
+pub use pushpop::*;

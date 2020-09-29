@@ -73,7 +73,70 @@ fn test_rpush() {
     rpush_buffers(
         get_default_con(),
         "foo",
-        Box::new("what's up dude!".as_bytes()),
+        Box::new(
+            "what's up dude, how you doin'? hope you be doin' fine.\
+        lately, I've been very perplexed that I am hard to decide. \
+        it is mostly because I am a f*ckin' perfectionist."
+                .as_bytes(),
+        ),
+    )
+    .join()
+    .unwrap()
+    .unwrap();
+}
+
+pub fn rpush_str(
+    mut conn: Connection,
+    list_name: &'static str,
+    st: &'static str,
+) -> JoinHandle<Result<i32, ()>> {
+    spawn(move || loop {
+        if let Ok(rx) = cmd("rpush")
+            .arg(list_name)
+            .arg::<&str>(st)
+            .query::<i32>(&mut conn)
+        {
+            return Ok(rx);
+        }
+    })
+}
+
+pub fn blpop_str(
+    mut conn: Connection,
+    list_name: &'static str,
+    time_out: u32,
+    out: Box<dyn Fn(&str) + Send>,
+) -> JoinHandle<()> {
+    spawn(move || loop {
+        if let Ok(re) = cmd("blpop")
+            .arg(list_name)
+            .arg(time_out)
+            .query::<Option<Vec<String>>>(&mut conn)
+        {
+            if let Some(x) = re {
+                (out)(&x[x.len() - 1]);
+            } else {
+                break;
+            }
+        }
+    })
+}
+
+#[test]
+fn test_blpop_str() {
+    blpop_str(get_default_con(), "foo", 5, Box::new(|x| println!("{}", x)))
+        .join()
+        .unwrap();
+}
+
+#[test]
+fn test_rpush_str() {
+    rpush_str(
+        get_default_con(),
+        "foo",
+        "what's up dude, how you doin'? hope you be doin' fine.\
+        lately, I've been very perplexed that I am hard to decide. \
+        it is mostly because I am a f*ckin' perfectionist.",
     )
     .join()
     .unwrap()
