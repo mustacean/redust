@@ -13,7 +13,7 @@ pub fn rpush_buffers(
     mut st: impl Read + Send + 'static,
 ) -> JoinHandle<Result<i32, ()>> {
     spawn(move || {
-        let mut buffer = &mut [0u8; BUFFER_SIZE];
+        let buffer = &mut [0u8; BUFFER_SIZE];
         loop {
             if let Ok(i) = st.read(buffer) {
                 if let Ok(rx) = cmd("rpush")

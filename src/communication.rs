@@ -1,5 +1,7 @@
-mod inbound;
-mod outbound;
+mod invoke;
+mod post;
+mod receive;
+mod send;
 
-pub use inbound::Receiver;
-pub use outbound::Sender;
+pub use receive::Receiver;
+pub use send::Sender;
