@@ -10,6 +10,21 @@ pub fn new_endpoint(owner: &str, name: &str) -> Endpoint {
     }
 }
 
+#[test]
+fn test_post() {
+    use crate::communication::IPost;
+    let cli = redis::Client::open("redis://127.0.0.1/").unwrap();
+
+    let fn_result = new_endpoint("mca", "get_rich")
+        .post_with_cli(&cli, "whats' upp broooooo!")
+        .unwrap();
+
+    println!("post result : {}", fn_result);
+
+    assert_ne!(fn_result, String::default())
+    //panic!("{}",fn_result);
+}
+
 impl Clone for Endpoint {
     fn clone(&self) -> Endpoint {
         Endpoint {

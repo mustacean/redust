@@ -9,7 +9,7 @@ const BUFFER_SIZE: usize = 64;
 
 pub fn rpush_buffers(
     mut conn: Connection,
-    list_name: &'static str,
+    list_name: String,
     mut st: Box<dyn Read + Send>,
 ) -> JoinHandle<Result<i32, ()>> {
     spawn(move || {
@@ -17,7 +17,7 @@ pub fn rpush_buffers(
         loop {
             if let Ok(i) = st.read(buffer) {
                 if let Ok(rx) = cmd("rpush")
-                    .arg(list_name)
+                    .arg(list_name.clone().as_str())
                     .arg::<&[u8]>(&mut buffer[0..i])
                     .query::<i32>(&mut conn)
                 {
@@ -30,15 +30,31 @@ pub fn rpush_buffers(
     })
 }
 
+pub fn rpush_str(
+    mut conn: Connection,
+    list_name: String,
+    st: String,
+) -> JoinHandle<Result<i32, ()>> {
+    spawn(move || loop {
+        if let Ok(rx) = cmd("rpush")
+            .arg(&list_name.clone())
+            .arg::<&str>(&st)
+            .query::<i32>(&mut conn)
+        {
+            return Ok(rx);
+        }
+    })
+}
+
 pub fn blpop_buffers(
     mut conn: Connection,
-    list_name: &'static str,
+    list_name: String,
     time_out: u32,
     mut wr: Box<dyn Write + Send>,
 ) -> JoinHandle<()> {
     spawn(move || loop {
         if let Ok(re) = cmd("blpop")
-            .arg(list_name)
+            .arg(&list_name)
             .arg(time_out)
             .query::<Option<Vec<String>>>(&mut conn)
         {
@@ -54,6 +70,26 @@ pub fn blpop_buffers(
     })
 }
 
+pub fn blpop_str(
+    mut conn: Connection,
+    list_name: String,
+    time_out: u32,
+) -> JoinHandle<Result<String, ()>> {
+    spawn(move || loop {
+        if let Ok(re) = cmd("blpop")
+            .arg(&list_name.clone())
+            .arg(time_out)
+            .query::<Option<Vec<String>>>(&mut conn)
+        {
+            if let Some(x) = re {
+                return Ok(x[x.len() - 1].clone());
+            } else {
+                return Err(());
+            }
+        }
+    })
+}
+
 fn get_default_con() -> Connection {
     redis::Client::open("redis://127.0.0.1/")
         .unwrap()
@@ -63,16 +99,21 @@ fn get_default_con() -> Connection {
 
 #[test]
 fn test_blpop() {
-    blpop_buffers(get_default_con(), "foo", 5, Box::new(std::io::stdout()))
-        .join()
-        .unwrap();
+    blpop_buffers(
+        get_default_con(),
+        "foo".to_owned(),
+        5,
+        Box::new(std::io::stdout()),
+    )
+    .join()
+    .unwrap();
 }
 
 #[test]
 fn test_rpush() {
     rpush_buffers(
         get_default_con(),
-        "foo",
+        "foo".to_owned(),
         Box::new(
             "what's up dude, how you doin'? hope you be doin' fine.\
         lately, I've been very perplexed that I am hard to decide. \
@@ -85,58 +126,25 @@ fn test_rpush() {
     .unwrap();
 }
 
-pub fn rpush_str(
-    mut conn: Connection,
-    list_name: &'static str,
-    st: &'static str,
-) -> JoinHandle<Result<i32, ()>> {
-    spawn(move || loop {
-        if let Ok(rx) = cmd("rpush")
-            .arg(list_name)
-            .arg::<&str>(st)
-            .query::<i32>(&mut conn)
-        {
-            return Ok(rx);
-        }
-    })
-}
-
-pub fn blpop_str(
-    mut conn: Connection,
-    list_name: &'static str,
-    time_out: u32,
-    out: Box<dyn Fn(&str) + Send>,
-) -> JoinHandle<()> {
-    spawn(move || loop {
-        if let Ok(re) = cmd("blpop")
-            .arg(list_name)
-            .arg(time_out)
-            .query::<Option<Vec<String>>>(&mut conn)
-        {
-            if let Some(x) = re {
-                (out)(&x[x.len() - 1]);
-            } else {
-                break;
-            }
-        }
-    })
-}
-
 #[test]
 fn test_blpop_str() {
-    blpop_str(get_default_con(), "foo", 5, Box::new(|x| println!("{}", x)))
-        .join()
-        .unwrap();
+    println!(
+        "{}",
+        blpop_str(get_default_con(), "foo".to_owned(), 5)
+            .join()
+            .unwrap().unwrap()
+    )
 }
 
 #[test]
 fn test_rpush_str() {
     rpush_str(
         get_default_con(),
-        "foo",
+        "foo".to_owned(),
         "what's up dude, how you doin'? hope you be doin' fine.\
         lately, I've been very perplexed that I am hard to decide. \
-        it is mostly because I am a f*ckin' perfectionist.",
+        it is mostly because I am a f*ckin' perfectionist."
+            .to_owned(),
     )
     .join()
     .unwrap()

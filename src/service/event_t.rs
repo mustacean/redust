@@ -13,14 +13,11 @@ pub fn new_event(owner: &str, name: &str) -> Event {
 #[test]
 fn test_invoker() {
     use crate::communication::IInvoker;
-    let cn = redis::Client::open("redis://127.0.0.1/")
-        .unwrap()
-        .get_connection()
-        .unwrap();
+    let cn = redis::Client::open("redis://127.0.0.1/").unwrap();
 
     assert_ne!(
         new_event("mca", "rised")
-            .invoke_with_conn(cn, "whats' upp broooooo!")
+            .invoke_with_conn(&cn, "whats' upp broooooo!")
             .unwrap(),
         0
     )
