@@ -10,7 +10,7 @@ const BUFFER_SIZE: usize = 64;
 pub fn rpush_buffers(
     mut conn: Connection,
     list_name: &'static str,
-    mut st: impl Read + Send + 'static,
+    mut st: Box<dyn Read + Send>,
 ) -> JoinHandle<Result<i32, ()>> {
     spawn(move || {
         let buffer = &mut [0u8; BUFFER_SIZE];
@@ -34,7 +34,7 @@ pub fn blpop_buffers(
     mut conn: Connection,
     list_name: &'static str,
     time_out: u32,
-    mut wr: impl Write + Send + 'static,
+    mut wr: Box<dyn Write + Send>,
 ) -> JoinHandle<()> {
     spawn(move || loop {
         if let Ok(re) = cmd("blpop")
@@ -63,15 +63,19 @@ fn get_default_con() -> Connection {
 
 #[test]
 fn test_blpop() {
-    blpop_buffers(get_default_con(), "foo", 5, std::io::stdout())
+    blpop_buffers(get_default_con(), "foo", 5, Box::new(std::io::stdout()))
         .join()
         .unwrap();
 }
 
 #[test]
 fn test_rpush() {
-    rpush_buffers(get_default_con(), "foo", "what's up dude!".as_bytes())
-        .join()
-        .unwrap()
-        .unwrap();
+    rpush_buffers(
+        get_default_con(),
+        "foo",
+        Box::new("what's up dude!".as_bytes()),
+    )
+    .join()
+    .unwrap()
+    .unwrap();
 }

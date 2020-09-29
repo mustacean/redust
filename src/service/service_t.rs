@@ -1,6 +1,6 @@
 use crate::communication::{Receiver, Sender};
 use crate::rd_tools::IRedisClient;
-use crate::service::{Endpoint, Event, RemoteInit};
+use crate::service::{Endpoint, Event};
 
 pub struct Service<'t> {
     name: &'t str,
@@ -11,41 +11,15 @@ pub struct Service<'t> {
 }
 
 impl<'t> Service<'t> {
-    pub fn open(
-        service_name: &str,
-        master: &Service,
-        ep_sender: Option<&str>,
-        ep_receiver: Option<&str>,
-    ) -> Result<Service<'t>, ()> {
-        let mut serv = Service::init(
-            master.get_conn(),
-            master.new_enpoint("get_service"),
-            service_name,
-        )?;
+    // pub fn open(
+    //     service_name: &'static str,
+    //     master: &Service,
+    //     ep_sender: Option<&str>,
+    //     ep_receiver: Option<&str>,
+    // ) -> Result<Service<'t>, ()> {
 
-        if let Some(sep) = ep_sender {
-            // init serv.sender
-            let the_sender = Sender::init(master.get_conn(), master.new_enpoint(sep), service_name);
-            serv.sender = if let Ok(e) = the_sender {
-                Some(Box::new(e))
-            } else {
-                None
-            }
-        }
-        if let Some(rep) = ep_receiver {
-            // init serv.receiver
-
-            let the_receiver =
-                Receiver::init(master.get_conn(), master.new_enpoint(rep), service_name);
-            serv.receiver = if let Ok(e) = the_receiver {
-                Some(Box::new(e))
-            } else {
-                None
-            }
-        }
-
-        Ok(serv)
-    }
+    //     Ok(serv)
+    // }
 
     pub fn get_name(&self) -> &str {
         &self.name
