@@ -41,4 +41,28 @@ impl Receiver {
     pub fn get_endpoints(&self) -> Option<&Vec<Endpoint>> {
         self.endpoints.as_ref()
     }
+
+    pub fn start_receive(
+        &self,
+        action: Box<dyn Fn(String) + Send + Sync>,
+    ) -> std::thread::JoinHandle<()> {
+        use std::iter::*;
+
+        let subsc_names = self
+            .get_subscriptions()
+            .unwrap()
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>();
+
+        crate::rd_tools::receive(
+            self.get_conn(),
+            subsc_names,
+            Box::new(move |x| {
+                let msg = x.unwrap().get_payload::<String>().unwrap();
+
+                (action)(msg);
+            }),
+        )
+    }
 }

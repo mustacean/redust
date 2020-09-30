@@ -1,7 +1,6 @@
-fn main() {
-    use redusty::communication::{IInvoker, IPost};
-    use redusty::service::*;
+use redusty::service::*;
 
+fn main() {
     let user_service = Service::open(
         "127.0.0.1",
         "user_service",
@@ -16,39 +15,67 @@ fn main() {
 
     match user_service {
         Ok(serv) => {
-            print!("----");
-            for e in serv.events().unwrap() {
-                print!("{}", e.to_string());
+            let (s, r) = std::sync::mpsc::sync_channel::<u32>(4);
 
-                println!(
-                    " --> online subscribers : {}",
-                    e.invoke(serv.sender(), "test").unwrap()
-                )
+            let sx = s.clone();
+            print_out(&serv);
+
+            let _ = serv.receiver().start_receive(Box::new(move |msg| {
+                println!("{}", msg);
+                sx.send(1).unwrap();
+            }));
+            std::thread::spawn(move || loop {
+                let mut x = String::new();
+
+                std::io::stdin().read_line(&mut x).unwrap();
+                print!("{}", x);
+            });
+            loop {
+                r.recv().unwrap();
+                print_out(&serv);
             }
-            println!("\nEndpoints to accept: ");
-            for e in serv.endpoints().unwrap() {
-                print!("{}", e.to_string());
-                let arg = "hello, world!";
-                println!(
-                    "---> The message we sent to the function : '{}' ; The result : '{}'",
-                    arg,
-                    e.post(serv.sender(), arg).unwrap()
-                )
-            }
-            println!("\nEvents subscribed: ");
-            for e in serv.subscriptions().unwrap() {
-                print!("{}", e.to_string());
-                println!(
-                    " --> online subscribers : {}",
-                    e.invoke(serv.sender(), "test").unwrap()
-                )
-            }
-            print!("----\n");
         }
         _ => {
             println!("sorry, something went wrong.");
         }
     };
+}
+
+fn print_out(serv: &Service) {
+    //use redusty::communication::{IInvoker, IPost};
+    print!("----");
+    println!("Events owned: ");
+    for e in serv.events().unwrap() {
+        print!("{},  ", e.to_string());
+
+        // println!(
+        //     " --> online subscribers : {}",
+        //     e.invoke(serv.sender(), "test").unwrap()
+        // )
+    }
+    println!("\nEndpoints to accept: ");
+    for e in serv.endpoints().unwrap() {
+        print!("{},  ", e.to_string());
+
+        //let arg = "hello, world!";
+        // println!(
+        //     "---> The message we sent to the function : '{}' ; The result : '{}'",
+        //     arg,
+        //     e.post(serv.sender(), arg).unwrap()
+        // )
+    }
+    println!("\nEvents subscribed: ");
+    for e in serv.subscriptions().unwrap() {
+        print!("{},  ", e.to_string());
+        // when commented out the code block below that invokes subsriptions which
+        // is already a stupid idea :-) it goes nut infinitely X)
+
+        // println!(
+        //     " --> online subscribers : {}",
+        //     e.invoke(serv.sender(), "test").unwrap()
+        // )
+    }
+    print!("----\n");
 }
 
 /* OUTPUT:

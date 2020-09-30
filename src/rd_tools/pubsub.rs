@@ -1,7 +1,7 @@
 use redis::*;
 pub fn receive(
     mut conn: Connection,
-    chs: &'static [&str],
+    chs: Vec<String>,
     action: Box<dyn Fn(RedisResult<Msg>) + Send + Sync>,
 ) -> std::thread::JoinHandle<()> {
     std::thread::spawn(move || {
@@ -40,7 +40,7 @@ fn test_pub() {
 fn test_recv() {
     receive(
         get_default_con(),
-        &["test", "mest"],
+        vec![String::from("test"), "mest".to_owned()],
         Box::new(|e| {
             println!("{:?}", e);
         }),
