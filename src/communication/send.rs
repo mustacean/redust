@@ -19,7 +19,7 @@ impl<'t> IRedisClient for Sender {
 }
 
 impl Sender {
-    pub fn new(host: &str, events: Option<Vec<(&str, &str)>>) -> Sender {
+    pub fn new(host: &str, events: Option<Vec<Event>>) -> Sender {
         fn get_redis_client(h: &str) -> Result<std::rc::Rc<Box<redis::Client>>, String> {
             if let Ok(x) = redis::Client::open(String::from("redis://") + h) {
                 Ok(std::rc::Rc::new(Box::new(x)))
@@ -31,7 +31,7 @@ impl Sender {
         if let Ok(r) = get_redis_client(host) {
             Sender {
                 client: r.clone(),
-                events: None,
+                events,
             }
         } else {
             panic!("pandic!")

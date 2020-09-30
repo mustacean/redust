@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Endpoint {
     owner: String,
     name: String,

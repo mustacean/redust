@@ -24,13 +24,13 @@ impl IRedisClient for Receiver {
 impl Receiver {
     pub fn new(
         sender: &Sender,
-        endpoints: Option<Vec<&str>>,
-        subscriptions: Option<Vec<&str>>,
+        endpoints: Option<Vec<Endpoint>>,
+        subscriptions: Option<Vec<Event>>,
     ) -> Receiver {
         let recv = Receiver {
             client: sender.get_client_rc(),
-            subscriptions: None,
-            endpoints: None,
+            subscriptions,
+            endpoints,
         };
         recv
     }

@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Event {
     owner: String,
     name: String,
