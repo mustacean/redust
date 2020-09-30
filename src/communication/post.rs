@@ -2,18 +2,16 @@ use crate::communication::Sender;
 use crate::service::Endpoint;
 
 pub trait IPost {
-    fn post<T>(&mut self, sender: &Sender, args: &str) -> Result<T, ()>;
+    fn post(&mut self, sender: &Sender, args: &str) -> Result<String, ()>;
 
     // to be deleted later:
     fn post_with_cli(&mut self, sender: &redis::Client, args: &str) -> Result<String, ()>;
 }
 
 impl IPost for Endpoint {
-    fn post<T>(&mut self, _sender: &Sender, _args: &str) -> Result<T, ()> {
-        todo!();
-        // use crate::rd_tools::IRedisClient;
-        // use crate::service::IServiceOwned;
-        //let con = sender.get_service().get_conn();
+    fn post(&mut self, sender: &Sender, args: &str) -> Result<String, ()> {
+        use crate::rd_tools::IRedisClient;
+        self.post_with_cli(&sender.get_client(), args)
     }
 
     fn post_with_cli(&mut self, cli: &redis::Client, args: &str) -> Result<String, ()> {

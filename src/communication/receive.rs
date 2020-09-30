@@ -1,19 +1,18 @@
+use crate::communication::Sender;
 use crate::rd_tools::IRedisClient;
-use crate::service::{Endpoint, Event, IServiceOwned, Service};
+use crate::service::{Endpoint, Event};
+use std::rc::Rc;
 
-pub struct Receiver<'t> {
-    client: redis::Client,
-    service: &'t Service<'t>,
+pub struct Receiver {
+    client: Rc<Box<redis::Client>>,
     endpoints: Option<Vec<Endpoint>>,
     subscriptions: Option<Vec<Event>>,
 }
-impl<'t> IServiceOwned<'t> for Receiver<'t> {
-    fn get_service(&self) -> &'t Service {
-        self.service
-    }
-}
 
-impl<'t> IRedisClient for Receiver<'t> {
+impl IRedisClient for Receiver {
+    fn get_client_rc(&self) -> Rc<Box<redis::Client>> {
+        self.client.clone()
+    }
     fn get_client(&self) -> &redis::Client {
         &self.client
     }
@@ -22,7 +21,20 @@ impl<'t> IRedisClient for Receiver<'t> {
     }
 }
 
-impl<'t> Receiver<'t> {
+impl Receiver {
+    pub fn new(
+        sender: &Sender,
+        endpoints: Option<Vec<&str>>,
+        subscriptions: Option<Vec<&str>>,
+    ) -> Receiver {
+        let recv = Receiver {
+            client: sender.get_client_rc(),
+            subscriptions: None,
+            endpoints: None,
+        };
+        recv
+    }
+
     pub fn get_subscriptions(&self) -> Option<&Vec<Event>> {
         self.subscriptions.as_ref()
     }

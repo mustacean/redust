@@ -9,11 +9,9 @@ pub trait IInvoker {
 }
 
 impl IInvoker for Event {
-    fn invoke(&mut self, _sender: &Sender, _args: &str) -> Result<i32, ()> {
-        // let cnn = sender.get_service().get_conn();
-        // use crate::rd_tools::IRedisClient;
-        // use crate::service::IServiceOwned;
-        todo!()
+    fn invoke(&mut self, sender: &Sender, args: &str) -> Result<i32, ()> {
+        use crate::rd_tools::IRedisClient;
+        self.invoke_with_conn(&sender.get_client(), args)
     }
     fn invoke_with_conn(&mut self, client: &redis::Client, args: &str) -> Result<i32, ()> {
         match crate::rd_tools::publish(client.get_connection().unwrap(), &self.to_string(), args) {
