@@ -42,9 +42,9 @@ impl Receiver {
         self.endpoints.as_ref()
     }
 
-    pub fn start_receive(
+    pub fn receive_events(
         &self,
-        action: Box<dyn Fn(String) + Send + Sync>,
+        action: Box<dyn Fn(Event, String) + Send + Sync>,
     ) -> std::thread::JoinHandle<()> {
         use std::iter::*;
 
@@ -59,9 +59,34 @@ impl Receiver {
             self.get_conn(),
             subsc_names,
             Box::new(move |x| {
-                let msg = x.unwrap().get_payload::<String>().unwrap();
+                // middleware...
+                let result = x.unwrap();
+                let ch = result.get_channel::<String>().unwrap();
 
-                (action)(msg);
+                let msg = result.get_payload::<String>().unwrap();
+
+                (action)(Event::from_string(&ch), msg);
+            }),
+        )
+    }
+
+    pub fn receive_endpoints(
+        &self,
+        action: Box<dyn Fn(Endpoint, String) + Send + Sync>,
+    ) -> std::thread::JoinHandle<()> {
+        let ep_names = self
+            .get_endpoints()
+            .unwrap()
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>();
+
+        crate::rd_tools::blpop_str_multiple(
+            self.get_conn(),
+            ep_names,
+            0,
+            Box::new(move |(s, e)| {
+                (action)(Endpoint::from_string(&e), s);
             }),
         )
     }

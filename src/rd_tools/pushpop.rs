@@ -74,18 +74,39 @@ pub fn blpop_str(
     mut conn: Connection,
     list_name: String,
     time_out: u32,
-) -> JoinHandle<Result<String, ()>> {
-    spawn(move || loop {
+) -> Result<(String, String), ()> {
+    if let Ok(re) = cmd("blpop")
+        .arg(&list_name.clone())
+        .arg(time_out)
+        .query::<Option<Vec<String>>>(&mut conn)
+    {
+        if let Some(x) = re {
+            return Ok((x[x.len() - 1].clone(), list_name));
+        } else {
+            return Err(());
+        }
+    } else {
+        Err(())
+    }
+}
+
+pub fn blpop_str_multiple(
+    mut conn: Connection,
+    lists: Vec<String>,
+    time_out: u32,
+    action: Box<dyn Fn((String, String)) + Send + Sync>,
+) -> JoinHandle<()> {
+    std::thread::spawn(move || loop {
         if let Ok(re) = cmd("blpop")
-            .arg(&list_name.clone())
+            .arg(lists.clone())
             .arg(time_out)
             .query::<Option<Vec<String>>>(&mut conn)
         {
             if let Some(x) = re {
-                return Ok(x[x.len() - 1].clone());
-            } else {
-                return Err(());
+                (action)((x[x.len() - 1].clone(), x[0].clone()));
             }
+        } else {
+            panic!("command couldn't be executed")
         }
     })
 }
@@ -130,9 +151,7 @@ fn test_rpush() {
 fn test_blpop_str() {
     println!(
         "{}",
-        blpop_str(get_default_con(), "foo".to_owned(), 5)
-            .join()
-            .unwrap().unwrap()
+        blpop_str(get_default_con(), "foo".to_owned(), 5).unwrap().0
     )
 }
 

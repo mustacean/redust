@@ -20,7 +20,7 @@ fn test_post() {
         .post_with_cli(&cli, "whats' upp broooooo!")
         .unwrap();
 
-    println!("post result : {}", fn_result);
+    println!("post result : {:?}", fn_result);
 
     assert_ne!(fn_result, String::default())
     //panic!("{}",fn_result);
@@ -45,5 +45,15 @@ impl Endpoint {
     }
     pub fn to_string(&self) -> String {
         format!("{}/{}", self.owner, self.name)
+    }
+
+    pub fn from_string(st: &String) -> Endpoint {
+        let sas: Vec<_> = st.split("/").collect();
+
+        if sas.len() == 2 {
+            new_endpoint(sas[0], sas[1])
+        } else {
+            panic!("wrong format!");
+        }
     }
 }
