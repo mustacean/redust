@@ -22,12 +22,19 @@ impl Service {
     pub fn receiver(&self) -> &Receiver {
         &self.receiver
     }
-    // pub fn new_event(&self, name: &str) -> Event {
-    //     super::event_t::new_event(self.name, name)
-    // }
-    // pub fn new_enpoint(&self, name: &str) -> Endpoint {
-    //     super::endpoint_t::new_endpoint(self.name, name)
-    // }
+    pub fn new_event(&self, name: &str) -> Event {
+        super::event_t::new_event(self.name, name)
+    }
+    pub fn new_enpoint(&self, name: &str) -> Endpoint {
+        super::endpoint_t::new_endpoint(self.name, name)
+    }
+
+    pub fn master_event(&self, name: &str) -> Event {
+        super::event_t::new_event("master", name)
+    }
+    pub fn master_endpoint(&self, name: &str) -> Endpoint {
+        super::endpoint_t::new_endpoint("master", name)
+    }
 
     pub fn events(&self) -> Option<&Vec<Event>> {
         self.sender().get_events()
@@ -80,7 +87,7 @@ impl Service {
         host: &'static str,
         service_name: &'static str,
         events: &[&str],
-        endpoints: &[(&str, &str)],
+        endpoints: &[&str],
         subscriptions: &[(&str, &str)],
     ) -> Result<Service, ()> {
         let events: Vec<Event> = events
@@ -90,7 +97,7 @@ impl Service {
         let sender = Sender::new(host, Some(events));
         let endpoints: Vec<Endpoint> = endpoints
             .iter()
-            .map(|(sn, epn)| crate::service::endpoint_t::new_endpoint(sn, epn))
+            .map(|epn| crate::service::endpoint_t::new_endpoint(service_name, epn))
             .collect();
         let subscriptions: Vec<Event> = subscriptions
             .iter()
@@ -104,25 +111,4 @@ impl Service {
             receiver,
         })
     }
-}
-
-#[test]
-fn test_new_service() {
-    assert_eq!(
-        true,
-        matches!(
-            Service::open(
-                "127.0.0.1",
-                "user_service",
-                &["added", "removed"],
-                &[("master", "get_online_service_list")],
-                &[
-                    ("master", "service_onlined"),
-                    ("master", "service_left"),
-                    ("master", "service_updated"),
-                ],
-            ),
-            Ok(_)
-        )
-    )
 }

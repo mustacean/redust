@@ -42,10 +42,7 @@ impl Receiver {
         self.endpoints.as_ref()
     }
 
-    pub fn receive_events(
-        &self,
-        action: Box<dyn Fn(Event, String) + Send + Sync>,
-    ) -> std::thread::JoinHandle<()> {
+    pub fn receive_events(&self, action: impl Fn(Event, String)) {
         use std::iter::*;
 
         let subsc_names = self
@@ -55,25 +52,21 @@ impl Receiver {
             .map(|x| x.to_string())
             .collect::<Vec<String>>();
 
-        crate::rd_tools::receive(
-            self.get_conn(),
-            subsc_names,
-            Box::new(move |x| {
-                // middleware...
-                let result = x.unwrap();
-                let ch = result.get_channel::<String>().unwrap();
+        crate::rd_tools::receive(self.get_conn(), subsc_names, |x| {
+            // middleware...
+            let result = x.unwrap();
+            let ch = result.get_channel::<String>().unwrap();
 
-                let msg = result.get_payload::<String>().unwrap();
+            let msg = result.get_payload::<String>().unwrap();
 
-                (action)(Event::from_string(&ch), msg);
-            }),
-        )
+            (action)(Event::from_string(&ch), msg);
+        })
     }
 
     pub fn receive_endpoints(
         &self,
-        action: Box<dyn Fn(Endpoint, String) + Send + Sync>,
-    ) -> std::thread::JoinHandle<()> {
+        action: impl Fn(Endpoint, String) -> crate::communication::ResponseType,
+    ) {
         let ep_names = self
             .get_endpoints()
             .unwrap()
@@ -85,9 +78,21 @@ impl Receiver {
             self.get_conn(),
             ep_names,
             0,
-            Box::new(move |(s, e)| {
-                (action)(Endpoint::from_string(&e), s);
-            }),
-        )
+            |request_payload, endp| {
+                let ep_received = Endpoint::from_string(&endp);
+                use crate::communication::IRespond;
+                if let Ok(i) = ep_received.respond(
+                    self.get_conn(),
+                    &request_payload,
+                    (action)(ep_received.clone(), request_payload.clone()),
+                ) {
+                    if i > 0 {
+                        println!("responded");
+                    } else {
+                        println!("no response");
+                    }
+                }
+            },
+        );
     }
 }
