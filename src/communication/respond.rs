@@ -1,15 +1,19 @@
+use crate::communication::Receiver;
 use crate::service::Endpoint;
 
 pub trait IRespond {
-    fn respond(&self, conn: redis::Connection, token: &str, res: ResponseType) -> Result<i32, ()>;
+    fn respond(&self, recv: &Receiver, token: &str, res: ResponseType) -> Result<i32, ()>;
 }
 
 impl IRespond for Endpoint {
-    fn respond(&self, conn: redis::Connection, token: &str, res: ResponseType) -> Result<i32, ()> {
+    fn respond(&self, recv: &Receiver, token: &str, res: ResponseType) -> Result<i32, ()> {
+        use crate::rd_tools::IRedisClient;
         match res {
             ResponseType::ListResponse(_) => Err(()),
             ResponseType::StreamResponse(_) => Err(()),
-            ResponseType::StringResponse(s) => crate::rd_tools::rpush_str(conn, token, &s),
+            ResponseType::StringResponse(s) => {
+                crate::rd_tools::rpush_str(recv.get_conn(), token, &s)
+            }
             _ => Ok(0),
         }
     }

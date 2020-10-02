@@ -1,9 +1,11 @@
 use crate::rd_tools::IRedisClient;
 use crate::service::Event;
+use std::rc::Rc;
 
+#[derive(Clone)]
 pub struct Sender {
-    client: std::rc::Rc<Box<redis::Client>>,
-    events: Option<Vec<Event>>,
+    client: Rc<Box<redis::Client>>,
+    events: Rc<Box<Vec<Event>>>,
 }
 
 impl<'t> IRedisClient for Sender {
@@ -20,24 +22,16 @@ impl<'t> IRedisClient for Sender {
 
 impl Sender {
     pub fn new(host: &str, events: Option<Vec<Event>>) -> Sender {
-        fn get_redis_client(h: &str) -> Result<std::rc::Rc<Box<redis::Client>>, String> {
-            if let Ok(x) = redis::Client::open(String::from("redis://") + h) {
-                Ok(std::rc::Rc::new(Box::new(x)))
+        Sender {
+            client: if let Ok(x) = redis::Client::open(String::from("redis://") + host) {
+                Rc::new(Box::new(x))
             } else {
                 panic!("ERROR; server unreachable!")
-            }
-        }
-
-        if let Ok(r) = get_redis_client(host) {
-            Sender {
-                client: r.clone(),
-                events,
-            }
-        } else {
-            panic!("pandic!")
+            },
+            events: Rc::new(Box::new(events.unwrap())),
         }
     }
-    pub fn get_events(&self) -> Option<&Vec<Event>> {
-        self.events.as_ref()
+    pub fn events(&self) -> &Vec<Event> {
+        &self.events
     }
 }

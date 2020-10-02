@@ -21,11 +21,11 @@ impl Clone for Endpoint {
 }
 
 impl Endpoint {
-    pub fn get_owner(&self) -> &str {
+    pub fn owner(&self) -> &str {
         &self.owner
     }
 
-    pub fn get_name(&self) -> &str {
+    pub fn name(&self) -> &str {
         &self.name
     }
     pub fn to_string(&self) -> String {

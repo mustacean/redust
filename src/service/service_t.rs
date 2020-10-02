@@ -36,40 +36,28 @@ impl Service {
         super::endpoint_t::new_endpoint("master", name)
     }
 
-    pub fn events(&self) -> Option<&Vec<Event>> {
-        self.sender().get_events()
+    pub fn events(&self) -> &Vec<Event> {
+        self.sender().events()
     }
 
     pub fn event_count(&self) -> usize {
-        if let Some(x) = self.sender().get_events() {
-            x.len()
-        } else {
-            0
-        }
+        self.sender().events().len()
     }
 
-    pub fn subscriptions(&self) -> Option<&Vec<Event>> {
-        self.receiver().get_subscriptions()
+    pub fn subscriptions(&self) -> &Vec<Event> {
+        self.receiver().subscriptions()
     }
 
     pub fn subscription_count(&self) -> usize {
-        if let Some(x) = self.receiver().get_subscriptions() {
-            x.len()
-        } else {
-            0
-        }
+        self.receiver().subscriptions().len()
     }
 
-    pub fn endpoints(&self) -> Option<&Vec<Endpoint>> {
-        self.receiver().get_endpoints()
+    pub fn endpoints(&self) -> &Vec<Endpoint> {
+        self.receiver().endpoints()
     }
 
     pub fn endpoint_count(&self) -> usize {
-        if let Some(x) = self.receiver().get_endpoints() {
-            x.len()
-        } else {
-            0
-        }
+        self.receiver().endpoints().len()
     }
 
     pub fn to_string(&self) -> String {
@@ -103,7 +91,7 @@ impl Service {
             .iter()
             .map(|(sn, evn)| crate::service::event_t::new_event(sn, evn))
             .collect();
-        let receiver = Receiver::new(&sender, Some(endpoints), Some(subscriptions));
+        let receiver = Receiver::new(&sender, endpoints, subscriptions);
         Ok(Service {
             name: service_name,
             host,
