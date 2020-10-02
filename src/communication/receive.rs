@@ -53,7 +53,6 @@ impl Receiver {
             .collect::<Vec<String>>();
 
         crate::rd_tools::receive(self.get_conn(), subsc_names, |x| {
-            // middleware...
             let result = x.unwrap();
             let ch = result.get_channel::<String>().unwrap();
 
@@ -76,7 +75,7 @@ impl Receiver {
 
         crate::rd_tools::blpop_str_multiple(
             self.get_conn(),
-            ep_names,
+            &ep_names,
             0,
             |request_payload, endp| {
                 let ep_received = Endpoint::from_string(&endp);

@@ -6,14 +6,10 @@ pub trait IRespond {
 
 impl IRespond for Endpoint {
     fn respond(&self, conn: redis::Connection, token: &str, res: ResponseType) -> Result<i32, ()> {
-        
-        
         match res {
             ResponseType::ListResponse(_) => Err(()),
             ResponseType::StreamResponse(_) => Err(()),
-            ResponseType::StringResponse(s) => {
-                crate::rd_tools::rpush_str(conn, token.to_owned(), s)
-            }
+            ResponseType::StringResponse(s) => crate::rd_tools::rpush_str(conn, token, &s),
             _ => Ok(0),
         }
     }
