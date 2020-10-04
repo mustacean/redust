@@ -43,11 +43,11 @@ impl Service {
     }
 
     pub fn subscriptions(&self) -> &Vec<Event> {
-        self.receiver().subscriptions()
+        self.receiver().antenna().subscriptions()
     }
 
     pub fn subscription_count(&self) -> usize {
-        self.receiver().subscriptions().len()
+        self.receiver().antenna().subscriptions().len()
     }
 
     pub fn endpoints(&self) -> &Vec<Endpoint> {

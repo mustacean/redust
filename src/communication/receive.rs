@@ -1,3 +1,4 @@
+use crate::communication::Antenna;
 use crate::communication::Sender;
 use crate::rd_tools::IRedisClient;
 use crate::service::{Endpoint, Event};
@@ -7,8 +8,8 @@ use std::rc::Rc;
 pub struct Receiver {
     client: Rc<Box<redis::Client>>,
     endpoints: Rc<Box<Vec<Endpoint>>>,
-    subscriptions: Rc<Box<Vec<Event>>>,
     sender: Sender,
+    antenna: Antenna,
     service_name: &'static str,
     host: &'static str,
 }
@@ -35,7 +36,7 @@ impl Receiver {
     ) -> Receiver {
         let recv = Receiver {
             client: sender.get_client_rc(),
-            subscriptions: Rc::new(Box::new(subscriptions)),
+            antenna: Antenna::new(&sender, subscriptions),
             endpoints: Rc::new(Box::new(endpoints)),
             sender,
             service_name,
@@ -44,38 +45,20 @@ impl Receiver {
         recv
     }
 
-    pub fn subscriptions(&self) -> &Vec<Event> {
-        self.subscriptions.as_ref()
-    }
     pub fn endpoints(&self) -> &Vec<Endpoint> {
         self.endpoints.as_ref()
     }
     pub fn sender(&self) -> &Sender {
         &self.sender
     }
+    pub fn antenna(&self) -> &Antenna {
+        &self.antenna
+    }
     pub fn service_name(&self) -> &'static str {
         self.service_name
     }
     pub fn host(&self) -> &'static str {
         self.host
-    }
-
-    pub fn subsc_names(&self) -> Vec<String> {
-        self.subscriptions()
-            .iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>()
-    }
-
-    pub fn receive_events(&self, action: impl Fn(&Event, &serde_json::Value)) {
-        crate::rd_tools::receive(self.get_conn(), self.subsc_names(), |x| {
-            let result = x.unwrap();
-            let ch = result.get_channel::<String>().unwrap();
-
-            let msg = result.get_payload::<String>().unwrap();
-
-            (action)(&Event::from_str(&ch), &serde_json::from_str(&msg).unwrap());
-        })
     }
 
     pub fn endpoint_names(&self) -> Vec<String> {
@@ -85,10 +68,7 @@ impl Receiver {
             .collect::<Vec<String>>()
     }
 
-    pub fn receive_endpoints(
-        &self,
-        action: impl Fn(&Endpoint, &Sender, &serde_json::Value) -> serde_json::Value,
-    ) {
+    pub fn receive_endpoints(&self, action: impl Fn(&Endpoint, &Sender, &serde_json::Value)) {
         crate::rd_tools::blpop_str_multiple(
             self.get_conn(),
             &self.endpoint_names(),
@@ -102,8 +82,14 @@ impl Receiver {
 
                 let token = val["token"].to_string();
 
-                let response_body = if ep_received.name() == "" {
-                    self.get_meta_info()
+                if ep_received.name() == "" {
+                    ep_received
+                        .respond(
+                            self,
+                            &self.sender().clone_from_token(&token),
+                            super::receive::get_meta_info(self),
+                        )
+                        .unwrap();
                 } else {
                     (action)(
                         &ep_received,
@@ -111,47 +97,44 @@ impl Receiver {
                         &val["payload"],
                     )
                 };
-
-                ep_received.respond(self, &token, response_body);
             },
         );
     }
-
-    fn get_meta_info(&self) -> serde_json::Value {
-        let sv_nm = self.service_name().to_owned();
-        let sv_host = self.host().to_owned();
-        let sv_token = self.sender().get_token().to_owned();
-        let evts = self.sender().event_names();
-        let endps = self.endpoint_names();
-        let subs = self.subsc_names();
-
-        let _meta_info_to_serialize = Smeta::new(sv_nm, sv_host, sv_token, evts, endps, subs);
-
-        //
-        todo!()
-    }
 }
 
-// can't find the goddamn bloody fuckin' macro :S
-#[allow(dead_code)]
-struct Smeta {
-    x: String,
-    y: String,
-    z: String,
-    w: Vec<String>,
-    u: Vec<String>,
-    t: Vec<String>,
-}
+fn get_meta_info(r: &Receiver) -> serde_json::Value {
+    let sv_nm = r.service_name().to_owned();
+    let sv_host = r.host().to_owned();
+    let sv_token = r.sender().get_token().to_owned();
+    use std::iter::*;
+    let evts: Vec<serde_json::Value> = r
+        .sender()
+        .event_names()
+        .iter()
+        .map(|x| serde_json::Value::String(x.to_owned()))
+        .collect();
 
-impl Smeta {
-    fn new(
-        x: String,
-        y: String,
-        z: String,
-        w: Vec<String>,
-        u: Vec<String>,
-        t: Vec<String>,
-    ) -> Smeta {
-        Smeta { x, y, z, w, u, t }
-    }
+    let endps: Vec<serde_json::Value> = r
+        .endpoint_names()
+        .iter()
+        .map(|x| serde_json::Value::String(x.to_owned()))
+        .collect();
+    let subs: Vec<serde_json::Value> = r
+        .antenna()
+        .subsc_names()
+        .iter()
+        .map(|x| serde_json::Value::String(x.to_owned()))
+        .collect();
+
+    let mut mp = serde_json::Map::new();
+
+    mp.insert("token".to_owned(), serde_json::Value::String(sv_token));
+    mp.insert("name".to_owned(), serde_json::Value::String(sv_nm));
+    mp.insert("host".to_owned(), serde_json::Value::String(sv_host));
+
+    mp.insert("events".to_owned(), serde_json::Value::Array(evts));
+    mp.insert("endpoints".to_owned(), serde_json::Value::Array(endps));
+    mp.insert("subscriptions".to_owned(), serde_json::Value::Array(subs));
+
+    serde_json::Value::Object(mp)
 }
