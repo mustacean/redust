@@ -4,7 +4,6 @@ use crate::service::{Endpoint, Event};
 pub struct Service {
     name: &'static str,
     host: &'static str,
-    sender: Sender,
     receiver: Receiver,
 }
 
@@ -16,7 +15,7 @@ impl Service {
         &self.host
     }
     pub fn sender(&self) -> &Sender {
-        &self.sender
+        &self.receiver().sender()
     }
 
     pub fn receiver(&self) -> &Receiver {
@@ -91,11 +90,10 @@ impl Service {
             .iter()
             .map(|(sn, evn)| crate::service::event_t::new_event(sn, evn))
             .collect();
-        let receiver = Receiver::new(&sender, endpoints, subscriptions);
+        let receiver = Receiver::new(sender, endpoints, subscriptions);
         Ok(Service {
             name: service_name,
             host,
-            sender,
             receiver,
         })
     }

@@ -8,6 +8,7 @@ pub struct Receiver {
     client: Rc<Box<redis::Client>>,
     endpoints: Rc<Box<Vec<Endpoint>>>,
     subscriptions: Rc<Box<Vec<Event>>>,
+    sender: Sender,
 }
 
 impl IRedisClient for Receiver {
@@ -23,11 +24,12 @@ impl IRedisClient for Receiver {
 }
 
 impl Receiver {
-    pub fn new(sender: &Sender, endpoints: Vec<Endpoint>, subscriptions: Vec<Event>) -> Receiver {
+    pub fn new(sender: Sender, endpoints: Vec<Endpoint>, subscriptions: Vec<Event>) -> Receiver {
         let recv = Receiver {
             client: sender.get_client_rc(),
             subscriptions: Rc::new(Box::new(subscriptions)),
             endpoints: Rc::new(Box::new(endpoints)),
+            sender,
         };
         recv
     }
@@ -38,8 +40,11 @@ impl Receiver {
     pub fn endpoints(&self) -> &Vec<Endpoint> {
         self.endpoints.as_ref()
     }
+    pub fn sender(&self) -> &Sender {
+        &self.sender
+    }
 
-    pub fn receive_events(&self, action: impl Fn(Event, String)) {
+    pub fn receive_events(&self, action: impl Fn(Event, serde_json::Value)) {
         use std::iter::*;
 
         let subsc_names = self
@@ -54,13 +59,13 @@ impl Receiver {
 
             let msg = result.get_payload::<String>().unwrap();
 
-            (action)(Event::from_string(&ch), msg);
+            (action)(Event::from_string(&ch), serde_json::from_str(&msg).unwrap());
         })
     }
 
     pub fn receive_endpoints(
         &self,
-        action: impl Fn(Endpoint, String) -> crate::communication::ResponseType,
+        action: impl Fn(&Endpoint, &Sender, &serde_json::Value) -> serde_json::Value,
     ) {
         let ep_names = self
             .endpoints()
@@ -68,25 +73,23 @@ impl Receiver {
             .map(|x| x.to_string())
             .collect::<Vec<String>>();
 
-        crate::rd_tools::blpop_str_multiple(
-            self.get_conn(),
-            &ep_names,
-            0,
-            |request_payload, endp| {
-                let ep_received = Endpoint::from_string(&endp);
-                use crate::communication::IRespond;
-                if let Ok(i) = ep_received.respond(
-                    self,
-                    &request_payload,
-                    (action)(ep_received.clone(), request_payload.clone()),
-                ) {
-                    if i > 0 {
-                        println!("responded");
-                    } else {
-                        println!("no response");
-                    }
-                }
-            },
-        );
+        crate::rd_tools::blpop_str_multiple(self.get_conn(), &ep_names, 0, |request_body, endp| {
+            let ep_received = Endpoint::from_string(&endp);
+            use crate::communication::IRespond;
+
+            let val: serde_json::Value = serde_json::from_str(&request_body).unwrap();
+
+            let token = val["token"].to_string();
+
+            ep_received.respond(
+                self,
+                &token,
+                (action)(
+                    &ep_received,
+                    &self.sender().clone().from_token(&token),
+                    &val["payload"],
+                ),
+            );
+        });
     }
 }

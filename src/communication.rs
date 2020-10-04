@@ -8,5 +8,4 @@ pub use invoke::IInvoker;
 pub use post::IPost;
 pub use receive::Receiver;
 use respond::IRespond;
-pub use respond::ResponseType;
 pub use send::Sender;

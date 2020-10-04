@@ -13,13 +13,13 @@ fn main() {
         Ok(serv) => {
             let rcv = serv.receiver();
             println!("listening on endpoints...");
-            rcv.receive_endpoints(|ep, arg| {
-                use redusty::communication::ResponseType;
-                println!("received on '{}' --->  {}", ep.to_string(), arg);
+            rcv.receive_endpoints(|endp, sender, payl| {
+                println!("received on '{}' --->  {}", endp.to_string(), payl);
 
-                ResponseType::StringResponse(format!(
-                    "welcome to the '{}' endpoint.",
-                    ep.to_string(),
+                serde_json::Value::String(format!(
+                    "welcome to the '{}' endpoint, dear sender; '{}'",
+                    endp.to_string(),
+                    sender.get_token(),
                 ))
             });
         }
@@ -28,3 +28,17 @@ fn main() {
         }
     };
 }
+
+/*
+
+listening on endpoints...
+received on 'master/test' --->  "message-1"
+received on 'master/online_services' --->  "msg-2"
+received on 'master/test' --->  "message-3"
+received on 'master/online_services' --->  "msg-4"
+received on 'master/test' --->  "message-1"
+received on 'master/online_services' --->  "msg-2"
+received on 'master/test' --->  "message-3"
+received on 'master/online_services' --->  "msg-4"
+
+*/

@@ -2,10 +2,10 @@ use crate::rd_tools::IRedisClient;
 use crate::service::Event;
 use std::rc::Rc;
 
-#[derive(Clone)]
 pub struct Sender {
     client: Rc<Box<redis::Client>>,
     events: Rc<Box<Vec<Event>>>,
+    token: String,
 }
 
 impl<'t> IRedisClient for Sender {
@@ -20,6 +20,16 @@ impl<'t> IRedisClient for Sender {
     }
 }
 
+impl Clone for Sender {
+    fn clone(&self) -> Sender {
+        Sender {
+            client: self.client.clone(),
+            events: self.events.clone(),
+            token: format!("{}", uuid::Uuid::new_v4()),
+        }
+    }
+}
+
 impl Sender {
     pub fn new(host: &str, events: Option<Vec<Event>>) -> Sender {
         Sender {
@@ -29,9 +39,19 @@ impl Sender {
                 panic!("ERROR; server unreachable!")
             },
             events: Rc::new(Box::new(events.unwrap())),
+            token: format!("{}", uuid::Uuid::new_v4()),
         }
+    }
+
+    pub fn from_token(self, token: &String) -> Sender {
+        let mut sn = self.clone();
+        sn.token = token.to_owned();
+        return sn;
     }
     pub fn events(&self) -> &Vec<Event> {
         &self.events
+    }
+    pub fn get_token(&self) -> &str {
+        &self.token
     }
 }
