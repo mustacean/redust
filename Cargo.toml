@@ -10,3 +10,4 @@ edition = "2018"
 redis = "0.17.0"
 uuid = { version = "0.8", features = ["v4"] }
 serde_json = "1.0.58"
+serde = "1.0.58"

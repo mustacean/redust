@@ -2,17 +2,15 @@ use crate::communication::{Receiver, Sender};
 use crate::service::{Endpoint, Event};
 
 pub struct Service {
-    name: &'static str,
-    host: &'static str,
     receiver: Receiver,
 }
 
 impl Service {
     pub fn name(&self) -> &str {
-        &self.name
+        &self.receiver().service_name()
     }
     pub fn host(&self) -> &str {
-        &self.host
+        &self.receiver().host()
     }
     pub fn sender(&self) -> &Sender {
         &self.receiver().sender()
@@ -21,11 +19,12 @@ impl Service {
     pub fn receiver(&self) -> &Receiver {
         &self.receiver
     }
+
     pub fn new_event(&self, name: &str) -> Event {
-        super::event_t::new_event(self.name, name)
+        super::event_t::new_event(self.receiver().service_name(), name)
     }
     pub fn new_enpoint(&self, name: &str) -> Endpoint {
-        super::endpoint_t::new_endpoint(self.name, name)
+        super::endpoint_t::new_endpoint(self.receiver().service_name(), name)
     }
 
     pub fn master_event(&self, name: &str) -> Event {
@@ -73,16 +72,28 @@ impl Service {
     pub fn open(
         host: &'static str,
         service_name: &'static str,
-        events: &[&str],
-        endpoints: &[&str],
-        subscriptions: &[(&str, &str)],
-    ) -> Result<Service, ()> {
+        events: &[&'static str],
+        endpoints: &[&'static str],
+        subscriptions: &[(&'static str, &'static str)],
+    ) -> Result<Service, &'static str> {
+        Service::name_validity_check(service_name)?;
+
+        for n in events {
+            Service::name_validity_check(n)?;
+        }
+        for n in endpoints {
+            Service::name_validity_check(n)?;
+        }
+        for (n, m) in subscriptions {
+            Service::name_validity_check(n)?;
+            Service::name_validity_check(m)?;
+        }
+
         let events: Vec<Event> = events
             .iter()
             .map(|en| crate::service::event_t::new_event(service_name, en))
             .collect();
-        let sender = Sender::new(host, Some(events));
-        let endpoints: Vec<Endpoint> = endpoints
+        let mut endpoints: Vec<Endpoint> = endpoints
             .iter()
             .map(|epn| crate::service::endpoint_t::new_endpoint(service_name, epn))
             .collect();
@@ -90,11 +101,25 @@ impl Service {
             .iter()
             .map(|(sn, evn)| crate::service::event_t::new_event(sn, evn))
             .collect();
-        let receiver = Receiver::new(sender, endpoints, subscriptions);
+
+        endpoints.push(crate::service::endpoint_t::new_endpoint(service_name, ""));
+
         Ok(Service {
-            name: service_name,
-            host,
-            receiver,
+            receiver: Receiver::new(
+                Sender::new(host, events),
+                service_name,
+                host,
+                endpoints,
+                subscriptions,
+            ),
         })
+    }
+
+    fn name_validity_check(name: &'static str) -> Result<&'static str, &'static str> {
+        if name.trim().is_empty() {
+            Err("invalid naming attempt.!!")
+        } else {
+            Ok(name)
+        }
     }
 }

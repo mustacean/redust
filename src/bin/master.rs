@@ -11,6 +11,8 @@ fn main() {
 
     match master_service {
         Ok(serv) => {
+            println!("{}", serv.to_string());
+
             let rcv = serv.receiver();
             println!("listening on endpoints...");
             rcv.receive_endpoints(|endp, sender, payl| {
@@ -23,22 +25,8 @@ fn main() {
                 ))
             });
         }
-        _ => {
-            println!("sorry, something went wrong.");
+        Err(e) => {
+            println!("{}", e);
         }
     };
 }
-
-/*
-
-listening on endpoints...
-received on 'master/test' --->  "message-1"
-received on 'master/online_services' --->  "msg-2"
-received on 'master/test' --->  "message-3"
-received on 'master/online_services' --->  "msg-4"
-received on 'master/test' --->  "message-1"
-received on 'master/online_services' --->  "msg-2"
-received on 'master/test' --->  "message-3"
-received on 'master/online_services' --->  "msg-4"
-
-*/

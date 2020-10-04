@@ -658,6 +658,7 @@ name = "redusty"
 version = "0.1.0"
 dependencies = [
  "redis",
+ "serde",
  "serde_json",
  "uuid",
 ]

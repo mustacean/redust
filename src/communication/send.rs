@@ -31,26 +31,34 @@ impl Clone for Sender {
 }
 
 impl Sender {
-    pub fn new(host: &str, events: Option<Vec<Event>>) -> Sender {
+    pub fn new(host: &str, events: Vec<Event>) -> Sender {
         Sender {
             client: if let Ok(x) = redis::Client::open(String::from("redis://") + host) {
                 Rc::new(Box::new(x))
             } else {
                 panic!("ERROR; server unreachable!")
             },
-            events: Rc::new(Box::new(events.unwrap())),
+            events: Rc::new(Box::new(events)),
             token: format!("{}", uuid::Uuid::new_v4()),
         }
     }
 
-    pub fn from_token(self, token: &String) -> Sender {
+    pub fn clone_from_token(&self, token: &String) -> Sender {
         let mut sn = self.clone();
         sn.token = token.to_owned();
         return sn;
     }
+
     pub fn events(&self) -> &Vec<Event> {
         &self.events
     }
+    pub fn event_names(&self) -> Vec<String> {
+        self.events()
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+    }
+
     pub fn get_token(&self) -> &str {
         &self.token
     }

@@ -32,7 +32,7 @@ impl Endpoint {
         format!("{}/{}", self.owner, self.name)
     }
 
-    pub fn from_string(st: &String) -> Endpoint {
+    pub fn from_str(st: &str) -> Endpoint {
         let sas: Vec<_> = st.split("/").collect();
 
         if sas.len() == 2 {
