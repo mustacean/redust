@@ -2,13 +2,14 @@ use crate::rd_tools::IRedisClient;
 use crate::service::Event;
 use std::rc::Rc;
 
+#[derive(Clone)]
 pub struct Sender {
     client: Rc<Box<redis::Client>>,
     events: Rc<Box<Vec<Event>>>,
-    token: String,
+    token: Rc<Box<String>>,
 }
 
-impl<'t> IRedisClient for Sender {
+impl IRedisClient for Sender {
     fn get_client_rc(&self) -> std::rc::Rc<Box<redis::Client>> {
         self.client.clone()
     }
@@ -20,15 +21,15 @@ impl<'t> IRedisClient for Sender {
     }
 }
 
-impl Clone for Sender {
-    fn clone(&self) -> Sender {
-        Sender {
-            client: self.client.clone(),
-            events: self.events.clone(),
-            token: format!("{}", uuid::Uuid::new_v4()),
-        }
-    }
-}
+// impl Clone for Sender {
+//     fn clone(&self) -> Sender {
+//         Sender {
+//             client: self.client.clone(),
+//             events: self.events.clone(),
+//             token: self.token.clone(),
+//         }
+//     }
+// }
 
 impl Sender {
     pub fn new(host: &str, events: Vec<Event>) -> Sender {
@@ -39,14 +40,20 @@ impl Sender {
                 panic!("ERROR; server unreachable!")
             },
             events: Rc::new(Box::new(events)),
-            token: format!("{}", uuid::Uuid::new_v4()),
+            token: Rc::new(Box::new(format!("{}", uuid::Uuid::new_v4()))),
         }
     }
 
-    pub fn clone_from_token(&self, token: &String) -> Sender {
+    pub fn set_token(&self) {
+        todo!()
+    }
+    pub fn clone_from_token(&self, token: String) -> Sender {
         let mut sn = self.clone();
-        sn.token = token.to_owned();
+        sn.token = Rc::new(Box::new(token));
         return sn;
+    }
+    pub fn get_token(&self) -> &str {
+        &self.token
     }
 
     pub fn events(&self) -> &Vec<Event> {
@@ -57,9 +64,5 @@ impl Sender {
             .iter()
             .map(|x| x.to_string())
             .collect::<Vec<String>>()
-    }
-
-    pub fn get_token(&self) -> &str {
-        &self.token
     }
 }
