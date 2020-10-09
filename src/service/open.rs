@@ -38,7 +38,7 @@ impl Service {
             .map(|(sn, evn)| crate::service::event_t::new_event(sn, evn))
             .collect();
 
-        endpoints.push(crate::service::endpoint_t::new_endpoint(service_name, ""));
+        endpoints.push(crate::service::endpoint_t::new_endpoint(service_name, "#"));
 
         Ok(Service::new(Receiver::new(
             Sender::new(host, events),
@@ -49,7 +49,7 @@ impl Service {
         )))
     }
     fn name_validity_check(name: &'static str) -> Result<&'static str, &'static str> {
-        if name.trim().is_empty() {
+        if name.trim().is_empty() | name.contains("#") {
             Err("invalid naming attempt.!!")
         } else {
             Ok(name)

@@ -27,7 +27,7 @@ impl Service {
     pub fn new_event(&self, name: &str) -> Event {
         super::event_t::new_event(self.receiver().service_name(), name)
     }
-    pub fn new_enpoint(&self, name: &str) -> Endpoint {
+    pub fn new_endpoint(&self, name: &str) -> Endpoint {
         super::endpoint_t::new_endpoint(self.receiver().service_name(), name)
     }
 
