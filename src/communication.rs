@@ -1,14 +1,14 @@
 mod antenna;
 mod invoke;
 mod post;
-mod receive;
+mod receiver;
 mod respond;
-mod send;
+mod sender;
 mod formats;
 
 pub use antenna::Antenna;
 pub use invoke::IInvoker;
 pub use post::IPost;
-pub use receive::Receiver;
+pub use receiver::Receiver;
 pub use respond::IRespond;
-pub use send::Sender;
+pub use sender::Sender;

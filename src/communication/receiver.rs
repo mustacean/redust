@@ -5,8 +5,8 @@ use crate::service::{Endpoint, Event};
 use std::rc::Rc;
 
 pub struct Receiver {
-    client: Rc<Box<redis::Client>>,
-    endpoints: Rc<Box<Vec<Endpoint>>>,
+    client: Rc<redis::Client>,
+    endpoints: Rc<Vec<Endpoint>>,
     sender: Sender,
     antenna: Antenna,
     service_name: &'static str,
@@ -14,7 +14,7 @@ pub struct Receiver {
 }
 
 impl IRedisClient for Receiver {
-    fn get_client_rc(&self) -> Rc<Box<redis::Client>> {
+    fn get_client_rc(&self) -> Rc<redis::Client> {
         self.client.clone()
     }
     fn get_client(&self) -> &redis::Client {
@@ -36,7 +36,7 @@ impl Receiver {
         let recv = Receiver {
             client: sender.get_client_rc(),
             antenna: Antenna::new(&sender, subscriptions),
-            endpoints: Rc::new(Box::new(endpoints)),
+            endpoints: Rc::new(endpoints),
             sender,
             service_name,
             host,
@@ -84,7 +84,7 @@ impl Receiver {
                 let token = val["token"].to_string();
                 let cl_tokn = &self.sender().clone_from_token(token);
 
-                let _temp_res = if ep_received.name() == "" {
+                let _temp_res = if ep_received.name() == "#" {
                     ep_received.respond(self, cl_tokn, super::formats::get_meta_info(self))
                 } else {
                     (func)(&ep_received, cl_tokn, &val["payload"])

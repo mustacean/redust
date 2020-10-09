@@ -4,13 +4,13 @@ use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct Sender {
-    client: Rc<Box<redis::Client>>,
-    events: Rc<Box<Vec<Event>>>,
-    token: Rc<Box<String>>,
+    client: Rc<redis::Client>,
+    events: Rc<Vec<Event>>,
+    token: Rc<String>,
 }
 
 impl IRedisClient for Sender {
-    fn get_client_rc(&self) -> std::rc::Rc<Box<redis::Client>> {
+    fn get_client_rc(&self) -> std::rc::Rc<redis::Client> {
         self.client.clone()
     }
     fn get_client(&self) -> &redis::Client {
@@ -35,12 +35,12 @@ impl Sender {
     pub fn new(host: &str, events: Vec<Event>) -> Sender {
         Sender {
             client: if let Ok(x) = redis::Client::open(String::from("redis://") + host) {
-                Rc::new(Box::new(x))
+                Rc::new(x)
             } else {
                 panic!("ERROR; server unreachable!")
             },
-            events: Rc::new(Box::new(events)),
-            token: Rc::new(Box::new(format!("{}", uuid::Uuid::new_v4()))),
+            events: Rc::new(events),
+            token: Rc::new(format!("{}", uuid::Uuid::new_v4())),
         }
     }
 
@@ -49,7 +49,7 @@ impl Sender {
     }
     pub fn clone_from_token(&self, token: String) -> Sender {
         let mut sn = self.clone();
-        sn.token = Rc::new(Box::new(token));
+        sn.token = Rc::new(token);
         return sn;
     }
     pub fn get_token(&self) -> &str {

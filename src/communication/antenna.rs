@@ -5,12 +5,12 @@ use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct Antenna {
-    client: Rc<Box<redis::Client>>,
-    subscriptions: Rc<Box<Vec<Event>>>,
+    client: Rc<redis::Client>,
+    subscriptions: Rc<Vec<Event>>,
 }
 
 impl IRedisClient for Antenna {
-    fn get_client_rc(&self) -> Rc<Box<redis::Client>> {
+    fn get_client_rc(&self) -> Rc<redis::Client> {
         self.client.clone()
     }
     fn get_client(&self) -> &redis::Client {
@@ -25,7 +25,7 @@ impl Antenna {
     pub fn new(sender: &Sender, subscriptions: Vec<Event>) -> Antenna {
         Antenna {
             client: sender.get_client_rc(),
-            subscriptions: Rc::new(Box::new(subscriptions)),
+            subscriptions: Rc::new(subscriptions),
         }
     }
     pub fn subsc_names(&self) -> Vec<String> {
