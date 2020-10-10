@@ -5,7 +5,7 @@ use telegram_bot::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let user_service = Service::open("127.0.0.1", "user_service", &[], &[], &[]).unwrap();
+    let user_service = Service::open("user_service", "127.0.0.1", &[], &[], &[]).unwrap();
     let sd = user_service.sender();
 
     use redusty::communication::IPost;
@@ -36,4 +36,6 @@ async fn main() -> Result<(), Error> {
 }
 */
 
-fn main(){ todo!() }
+fn main() {
+    todo!()
+}

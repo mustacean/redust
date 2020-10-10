@@ -1,45 +1,30 @@
 use crate::communication::Sender;
-use crate::rd_tools::IRedisClient;
 use crate::service::Endpoint;
 use crate::service::Service;
 use std::rc::Rc;
 
 pub struct Receiver {
-    service: Service,
-    client: Rc<redis::Client>,
+    sender: Rc<Sender>,
 }
 
 impl Receiver {
-    pub fn create(service: Service, sender: &Sender) -> Receiver {
-        Receiver {
-            service,
-            client: sender.get_client_rc(),
-        }
+    pub fn create(sender: Rc<Sender>) -> Receiver {
+        Receiver { sender }
     }
-    pub fn service(&self) -> &Service {
-        &self.service
-    }
-}
-impl IRedisClient for Receiver {
-    fn get_client_rc(&self) -> Rc<redis::Client> {
-        self.client.clone()
-    }
-    fn get_client(&self) -> &redis::Client {
-        &self.client
-    }
-    fn get_conn(&self) -> redis::Connection {
-        self.get_client().get_connection().unwrap()
+    pub fn sender(&self) -> &Sender {
+        &self.sender
     }
 }
 
 impl Receiver {
     pub fn receive_endpoints(
         &self,
-        func: impl Fn(&Endpoint, &Service, &serde_json::Value) -> Result<i32, ()>,
+        func: impl Fn(&Endpoint, &str, &serde_json::Value) -> Result<i32, ()>,
     ) {
+        use crate::rd_tools::IRedisClient;
         crate::rd_tools::blpop_str_multiple(
-            self.get_conn(),
-            &self.service().endpoint_names(),
+            self.sender().get_conn(),
+            &self.sender().service().endpoint_names(),
             0,
             |request_body, endp| {
                 let ep_received = Endpoint::from_str(&endp);
@@ -53,14 +38,10 @@ impl Receiver {
                     ep_received.respond_token(
                         self,
                         &token,
-                        Service::service_to_json(self.service()),
+                        Service::service_to_json(self.sender().service()),
                     )
                 } else {
-                    (func)(
-                        &ep_received,
-                        &Service::token_to_service(self.service(), &token),
-                        &val["payload"],
-                    )
+                    (func)(&ep_received, &token, &val["payload"])
                 };
             },
         );

@@ -40,9 +40,9 @@ impl Service {
     //     todo!()
     // }
 
-    pub fn token_to_service(&self, token: &str) -> Service {
-        let mut sevo = self.clone();
-        sevo.set_token(token);
-        sevo
-    }
+    // pub fn token_to_service(&self, token: &str) -> Service {
+    //     let mut sevo = self.clone();
+    //     sevo.set_token(token);
+    //     sevo
+    // }
 }

@@ -5,7 +5,7 @@ use std::rc::Rc;
 #[derive(Clone)]
 pub struct Sender {
     client: Rc<redis::Client>,
-    service: Service,
+    service: Rc<Service>,
 }
 
 impl IRedisClient for Sender {
@@ -23,7 +23,7 @@ impl IRedisClient for Sender {
 impl Sender {
     pub fn create(service: Service) -> Sender {
         Sender {
-            service,
+            service: Rc::new(service),
             client: if let Ok(x) = redis::Client::open("redis://127.0.0.1/") {
                 Rc::new(x)
             } else {

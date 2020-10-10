@@ -30,14 +30,14 @@ impl IRespond for Endpoint {
         let mut mp = serde_json::Map::new();
         mp.insert(
             "from".to_owned(),
-            serde_json::Value::String(recv.service().token().to_owned()),
+            serde_json::Value::String(recv.sender().service().token().to_owned()),
         );
         mp.insert("to".to_owned(), serde_json::Value::String(token.to_owned()));
         mp.insert("payload".to_owned(), response_payload);
 
         let ss = serde_json::to_string(&serde_json::Value::Object(mp)).unwrap();
 
-        crate::rd_tools::rpush_str(recv.get_conn(), token, &ss)
+        crate::rd_tools::rpush_str(recv.sender().get_conn(), token, &ss)
     }
     fn respond(
         &self,

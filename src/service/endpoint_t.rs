@@ -1,26 +1,17 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Endpoint {
     owner: String,
     name: String,
 }
 
-pub fn new_endpoint(owner: &str, name: &str) -> Endpoint {
-    Endpoint {
-        owner: owner.to_owned(),
-        name: name.to_owned(),
-    }
-}
-
-impl Clone for Endpoint {
-    fn clone(&self) -> Endpoint {
+impl Endpoint {
+    fn new(owner: &str, name: &str) -> Endpoint {
         Endpoint {
-            name: self.name.clone(),
-            owner: self.owner.clone(),
+            owner: owner.to_owned(),
+            name: name.to_owned(),
         }
     }
-}
 
-impl Endpoint {
     pub fn owner(&self) -> &str {
         &self.owner
     }
@@ -36,7 +27,7 @@ impl Endpoint {
         let sas: Vec<_> = st.split("/").collect();
 
         if sas.len() == 2 {
-            new_endpoint(sas[0], sas[1])
+            Endpoint::new(sas[0], sas[1])
         } else {
             panic!("wrong format!");
         }

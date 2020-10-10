@@ -15,10 +15,10 @@ impl Service {
             Service::name_validity_check(n.name())?;
         }
 
-        service.add_endpoint(crate::service::endpoint_t::new_endpoint(
-            service.name(),
-            "#",
-        ));
+        service.add_endpoint(crate::service::Endpoint::from_str(&format!(
+            "{}/#",
+            service.name()
+        )));
 
         Ok(ServiceManager::new(service))
     }

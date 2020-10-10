@@ -3,7 +3,7 @@ use redust::service::Endpoint;
 use redust::service::Service;
 
 fn main() {
-    let user_service = Service::new("127.0.0.1", "mca", vec![], vec![], vec![]);
+    let user_service = Service::new("mca", "127.0.0.1", vec![], vec![], vec![]);
 
     let sv_manage = Service::open(user_service).unwrap();
 

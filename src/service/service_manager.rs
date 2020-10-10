@@ -2,10 +2,11 @@ use crate::communication::Antenna;
 use crate::communication::Receiver;
 use crate::communication::Sender;
 use crate::service::Service;
+use std::rc::Rc;
 
 pub struct ServiceManager {
+    sender: Rc<Sender>,
     receiver: Receiver,
-    sender: Sender,
     antenna: Antenna,
     service: Service,
 }
@@ -13,13 +14,14 @@ pub struct ServiceManager {
 impl ServiceManager {
     pub fn new(service: Service) -> ServiceManager {
         let sender = Sender::create(service.clone());
-        let receiver = Receiver::create(service.clone(), &sender);
-        let antenna = Antenna::create(service.clone(), &sender);
+        let sd = Rc::new(sender);
+        let recv = Receiver::create(sd.clone());
+        let antenna = Antenna::create(sd.clone());
 
         ServiceManager {
             service,
-            sender,
-            receiver,
+            sender: sd,
+            receiver: recv,
             antenna,
         }
     }
@@ -32,7 +34,7 @@ impl ServiceManager {
     pub fn antenna(&self) -> &Antenna {
         &self.antenna
     }
-    pub fn service(&self) -> Service {
-        self.service.clone()
+    pub fn service(&self) -> &Service {
+        &self.service
     }
 }

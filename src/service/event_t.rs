@@ -1,25 +1,16 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Event {
     owner: String,
     name: String,
 }
-
-pub fn new_event(owner: &str, name: &str) -> Event {
-    Event {
-        owner: owner.to_owned(),
-        name: name.to_owned(),
-    }
-}
-
-impl Clone for Event {
-    fn clone(&self) -> Event {
+impl Event {
+    fn new(owner: &str, name: &str) -> Event {
         Event {
-            name: self.name.clone(),
-            owner: self.owner.clone(),
+            owner: owner.to_owned(),
+            name: name.to_owned(),
         }
     }
-}
-impl Event {
+
     pub fn owner(&self) -> &str {
         &self.owner
     }
@@ -33,7 +24,7 @@ impl Event {
         let sas: Vec<_> = st.split(".").collect();
 
         if sas.len() == 2 {
-            new_event(sas[0], sas[1])
+            Event::new(sas[0], sas[1])
         } else {
             panic!("wrong format!");
         }

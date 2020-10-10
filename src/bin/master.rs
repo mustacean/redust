@@ -24,16 +24,16 @@ fn main() {
 
     let rcv = s_manager.receiver();
     println!("listening on endpoints...");
-    rcv.receive_endpoints(|endp, sender_service, payl| {
+    rcv.receive_endpoints(|endp, token, payl| {
         println!("received on '{}' --->  {}", endp.to_string(), payl);
 
-        let rez = endp.respond(
+        let rez = endp.respond_token(
             &rcv,
-            &sender_service,
+            token,
             serde_json::Value::String(format!(
                 "welcome to the '{}' endpoint, dear sender; '{}'",
                 endp.to_string(),
-                sender_service.token(),
+                token,
             )),
         );
         if let Ok(_) = rez {

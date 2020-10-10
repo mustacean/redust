@@ -3,9 +3,9 @@ use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct Service {
-    name: &'static str,
-    host: &'static str,
-    token: String,
+    name: Rc<String>,
+    host: Rc<String>,
+    token: Rc<String>,
     events: Rc<Vec<Event>>,
     endpoints: Rc<Vec<Endpoint>>,
     subscriptions: Rc<Vec<Event>>,
@@ -20,12 +20,12 @@ impl Service {
         subs: Vec<Event>,
     ) -> Service {
         Service {
-            name,
-            host,
+            name: Rc::new(name.to_owned()),
+            host: Rc::new(host.to_owned()),
+            token: Rc::new(/*format!("{}", uuid::Uuid::new_v4())*/ name.to_owned()),
             events: Rc::new(events),
             subscriptions: Rc::new(subs),
             endpoints: Rc::new(eps),
-            token: format!("{}", uuid::Uuid::new_v4()),
         }
     }
 
@@ -35,49 +35,46 @@ impl Service {
     pub fn host(&self) -> &str {
         &self.host
     }
+    pub fn token(&self) -> &str {
+        &self.token
+    }
+    // pub fn set_token(&mut self, token: &str) {
+    //     let yoo = Rc::get_mut(&mut self.token).unwrap();
+    //     *yoo = token.to_owned();
+    // }
 
     pub fn events(&self) -> &Vec<Event> {
         &self.events
     }
-
     pub fn event_count(&self) -> usize {
         self.events().len()
     }
-
     pub fn subscriptions(&self) -> &Vec<Event> {
         self.subscriptions.as_ref()
     }
-
     pub fn subscription_count(&self) -> usize {
         self.subscriptions().len()
     }
-
     pub fn endpoints(&self) -> &Vec<Endpoint> {
         self.endpoints.as_ref()
     }
-    pub fn add_endpoint(&mut self, ep: Endpoint) {
-        let yoo = Rc::get_mut(&mut self.endpoints).unwrap();
-        yoo.push(ep);
-    }
-    pub fn add_event(&mut self, ev: Event) {
-        let yoo = Rc::get_mut(&mut self.events).unwrap();
-        yoo.push(ev);
-    }
-    pub fn add_subs(&mut self, ev: Event) {
-        let yoo = Rc::get_mut(&mut self.subscriptions).unwrap();
-        yoo.push(ev);
-    }
-
     pub fn endpoint_count(&self) -> usize {
         self.endpoints().len()
     }
 
-    pub fn token(&self) -> &str {
-        &self.token
+    pub fn add_endpoint(&mut self, ep: Endpoint) {
+        let yoo = Rc::get_mut(&mut self.endpoints).unwrap();
+        yoo.push(ep);
     }
-    pub fn set_token(&mut self, token: &str) {
-        self.token = token.to_owned();
-    }
+    // pub fn add_event(&mut self, ev: Event) {
+    //     let yoo = Rc::get_mut(&mut self.events).unwrap();
+    //     yoo.push(ev);
+    // }
+    // pub fn add_subs(&mut self, ev: Event) {
+    //     let yoo = Rc::get_mut(&mut self.subscriptions).unwrap();
+    //     yoo.push(ev);
+    // }
+
     pub fn endpoint_names(&self) -> Vec<String> {
         self.endpoints()
             .iter()
