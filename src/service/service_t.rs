@@ -1,65 +1,100 @@
-use crate::communication::{Receiver, Sender};
 use crate::service::{Endpoint, Event};
+use std::rc::Rc;
 
+#[derive(Clone)]
 pub struct Service {
-    receiver: Receiver,
+    name: &'static str,
+    host: &'static str,
+    token: String,
+    events: Rc<Vec<Event>>,
+    endpoints: Rc<Vec<Endpoint>>,
+    subscriptions: Rc<Vec<Event>>,
 }
 
 impl Service {
-    pub fn new(receiver: Receiver) -> Service {
-        Service { receiver }
+    pub fn new(
+        name: &'static str,
+        host: &'static str,
+        events: Vec<Event>,
+        eps: Vec<Endpoint>,
+        subs: Vec<Event>,
+    ) -> Service {
+        Service {
+            name,
+            host,
+            events: Rc::new(events),
+            subscriptions: Rc::new(subs),
+            endpoints: Rc::new(eps),
+            token: format!("{}", uuid::Uuid::new_v4()),
+        }
     }
 
     pub fn name(&self) -> &str {
-        &self.receiver().service_name()
+        &self.name
     }
     pub fn host(&self) -> &str {
-        &self.receiver().host()
-    }
-    pub fn sender(&self) -> &Sender {
-        &self.receiver().sender()
-    }
-
-    pub fn receiver(&self) -> &Receiver {
-        &self.receiver
-    }
-
-    pub fn new_event(&self, name: &str) -> Event {
-        super::event_t::new_event(self.receiver().service_name(), name)
-    }
-    pub fn new_endpoint(&self, name: &str) -> Endpoint {
-        super::endpoint_t::new_endpoint(self.receiver().service_name(), name)
-    }
-
-    pub fn master_event(&self, name: &str) -> Event {
-        super::event_t::new_event("master", name)
-    }
-    pub fn master_endpoint(&self, name: &str) -> Endpoint {
-        super::endpoint_t::new_endpoint("master", name)
+        &self.host
     }
 
     pub fn events(&self) -> &Vec<Event> {
-        self.sender().events()
+        &self.events
     }
 
     pub fn event_count(&self) -> usize {
-        self.sender().events().len()
+        self.events().len()
     }
 
     pub fn subscriptions(&self) -> &Vec<Event> {
-        self.receiver().antenna().subscriptions()
+        self.subscriptions.as_ref()
     }
 
     pub fn subscription_count(&self) -> usize {
-        self.receiver().antenna().subscriptions().len()
+        self.subscriptions().len()
     }
 
     pub fn endpoints(&self) -> &Vec<Endpoint> {
-        self.receiver().endpoints()
+        self.endpoints.as_ref()
+    }
+    pub fn add_endpoint(&mut self, ep: Endpoint) {
+        let yoo = Rc::get_mut(&mut self.endpoints).unwrap();
+        yoo.push(ep);
+    }
+    pub fn add_event(&mut self, ev: Event) {
+        let yoo = Rc::get_mut(&mut self.events).unwrap();
+        yoo.push(ev);
+    }
+    pub fn add_subs(&mut self, ev: Event) {
+        let yoo = Rc::get_mut(&mut self.subscriptions).unwrap();
+        yoo.push(ev);
     }
 
     pub fn endpoint_count(&self) -> usize {
-        self.receiver().endpoints().len()
+        self.endpoints().len()
+    }
+
+    pub fn token(&self) -> &str {
+        &self.token
+    }
+    pub fn set_token(&mut self, token: &str) {
+        self.token = token.to_owned();
+    }
+    pub fn endpoint_names(&self) -> Vec<String> {
+        self.endpoints()
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+    }
+    pub fn subsc_names(&self) -> Vec<String> {
+        self.subscriptions()
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+    }
+    pub fn event_names(&self) -> Vec<String> {
+        self.events()
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
     }
 
     pub fn to_string(&self) -> String {

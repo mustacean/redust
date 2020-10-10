@@ -1,30 +1,39 @@
-use redusty::communication::IRespond;
-use redusty::service::*;
+use redust::communication::IRespond;
+use redust::service::Endpoint;
+use redust::service::Event;
+use redust::service::Service;
 
 fn main() {
-    let serv = Service::open(
-        "127.0.0.1",
+    let service = Service::new(
         "master",
-        &["service_joined", "service_left"],
-        &["online_services", "test"],
-        &[],
-    )
-    .unwrap();
+        "127.0.0.1",
+        vec![
+            Event::from_str("master.service_joined"),
+            Event::from_str("master.service_left"),
+        ],
+        vec![
+            Endpoint::from_str("master/online_services"),
+            Endpoint::from_str("master/test"),
+        ],
+        vec![],
+    );
 
-    println!("{}", serv.to_string());
+    let s_manager = Service::open(service).unwrap();
 
-    let rcv = serv.receiver();
+    println!("{}", s_manager.service().to_string());
+
+    let rcv = s_manager.receiver();
     println!("listening on endpoints...");
-    rcv.receive_endpoints(|endp, sender, payl| {
+    rcv.receive_endpoints(|endp, sender_service, payl| {
         println!("received on '{}' --->  {}", endp.to_string(), payl);
 
         let rez = endp.respond(
             &rcv,
-            &sender,
+            &sender_service,
             serde_json::Value::String(format!(
                 "welcome to the '{}' endpoint, dear sender; '{}'",
                 endp.to_string(),
-                sender.get_token(),
+                sender_service.token(),
             )),
         );
         if let Ok(_) = rez {

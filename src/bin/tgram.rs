@@ -1,5 +1,6 @@
-use futures::StreamExt;
-use redusty::service::Service;
+/*use futures::StreamExt;
+use redust::service::Endpoint;
+use redust::service::Service;
 use telegram_bot::*;
 
 #[tokio::main]
@@ -12,7 +13,7 @@ async fn main() -> Result<(), Error> {
     let token = String::from("1174014963:AAGCE4nJb0U9zX1rS2kBBK2IFeqUKaaKgjM");
     let api = Api::new(token);
     let mut stream = api.stream();
-    let ep_ = user_service.master_endpoint("test");
+    let ep_ = Endpoint::from_str("master/test");
     println!("Server established to accept connections.");
     while let Some(update) = stream.next().await {
         let update = update?;
@@ -33,3 +34,6 @@ async fn main() -> Result<(), Error> {
     }
     Ok(())
 }
+*/
+
+fn main(){ todo!() }

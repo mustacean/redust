@@ -1,54 +1,28 @@
-use crate::communication::Receiver;
-use crate::communication::Sender;
-use crate::service::Endpoint;
-use crate::service::Event;
 use crate::service::Service;
+use crate::service::ServiceManager;
 
 impl Service {
-    pub fn open(
-        host: &'static str,
-        service_name: &'static str,
-        events: &[&'static str],
-        endpoints: &[&'static str],
-        subscriptions: &[(&'static str, &'static str)],
-    ) -> Result<Service, &'static str> {
-        Service::name_validity_check(service_name)?;
+    pub fn open(mut service: Service) -> Result<ServiceManager, &'static str> {
+        Service::name_validity_check(service.name())?;
 
-        for n in events {
-            Service::name_validity_check(n)?;
+        for n in service.events() {
+            Service::name_validity_check(n.name())?;
         }
-        for n in endpoints {
-            Service::name_validity_check(n)?;
+        for n in service.endpoints() {
+            Service::name_validity_check(n.name())?;
         }
-        for (n, m) in subscriptions {
-            Service::name_validity_check(n)?;
-            Service::name_validity_check(m)?;
+        for n in service.subscriptions() {
+            Service::name_validity_check(n.name())?;
         }
 
-        let events: Vec<Event> = events
-            .iter()
-            .map(|en| crate::service::event_t::new_event(service_name, en))
-            .collect();
-        let mut endpoints: Vec<Endpoint> = endpoints
-            .iter()
-            .map(|epn| crate::service::endpoint_t::new_endpoint(service_name, epn))
-            .collect();
-        let subscriptions: Vec<Event> = subscriptions
-            .iter()
-            .map(|(sn, evn)| crate::service::event_t::new_event(sn, evn))
-            .collect();
+        service.add_endpoint(crate::service::endpoint_t::new_endpoint(
+            service.name(),
+            "#",
+        ));
 
-        endpoints.push(crate::service::endpoint_t::new_endpoint(service_name, "#"));
-
-        Ok(Service::new(Receiver::new(
-            Sender::new(host, events),
-            service_name,
-            host,
-            endpoints,
-            subscriptions,
-        )))
+        Ok(ServiceManager::new(service))
     }
-    fn name_validity_check(name: &'static str) -> Result<&'static str, &'static str> {
+    fn name_validity_check(name: &str) -> Result<&str, &'static str> {
         if name.trim().is_empty() | name.contains("#") {
             Err("invalid naming attempt.!!")
         } else {

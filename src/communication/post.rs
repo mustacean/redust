@@ -14,7 +14,7 @@ impl IPost for Endpoint {
 
         mp.insert(
             "token".to_owned(),
-            serde_json::Value::String(sender.get_token().to_owned()),
+            serde_json::Value::String(sender.service().token().to_owned()),
         );
         mp.insert("payload".to_owned(), payload);
 
@@ -23,7 +23,7 @@ impl IPost for Endpoint {
         if let Ok(_) = crate::rd_tools::rpush_str(sender.get_conn(), &self.to_string(), &ss) {
             if let Ok(result) = crate::rd_tools::blpop_str(
                 sender.get_conn(),
-                &format!("\"{}\"", sender.get_token()),
+                &format!("\"{}\"", sender.service().token()),
                 1,
             ) {
                 Ok(Some(serde_json::from_str(&result.0).unwrap()))

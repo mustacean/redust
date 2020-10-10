@@ -1,12 +1,13 @@
 use crate::communication::Sender;
 use crate::rd_tools::IRedisClient;
 use crate::service::Event;
+use crate::service::Service;
 use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct Antenna {
     client: Rc<redis::Client>,
-    subscriptions: Rc<Vec<Event>>,
+    service: Service,
 }
 
 impl IRedisClient for Antenna {
@@ -22,24 +23,19 @@ impl IRedisClient for Antenna {
 }
 
 impl Antenna {
-    pub fn new(sender: &Sender, subscriptions: Vec<Event>) -> Antenna {
+    pub fn create(service: Service, sender: &Sender) -> Antenna {
         Antenna {
+            service,
             client: sender.get_client_rc(),
-            subscriptions: Rc::new(subscriptions),
         }
     }
-    pub fn subsc_names(&self) -> Vec<String> {
-        self.subscriptions()
-            .iter()
-            .map(|x| x.to_string())
-            .collect::<Vec<String>>()
+    pub fn service(&self) -> &Service {
+        &self.service
     }
-    pub fn subscriptions(&self) -> &Vec<Event> {
-        self.subscriptions.as_ref()
-    }
-
+}
+impl Antenna {
     pub fn receive_events(&self, action: impl Fn(&Event, &serde_json::Value)) {
-        crate::rd_tools::receive(self.get_conn(), self.subsc_names(), |x| {
+        crate::rd_tools::receive(self.get_conn(), self.service().subsc_names(), |x| {
             let result = x.unwrap();
             let ch = result.get_channel::<String>().unwrap();
 
