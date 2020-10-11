@@ -5,7 +5,6 @@ impl Service {
         let sv_nm = self.name().to_owned();
         let sv_host = self.host().to_owned();
         let sv_token = self.token().to_owned();
-        use std::iter::*;
         let evts: Vec<serde_json::Value> = self
             .event_names()
             .iter()
@@ -36,13 +35,51 @@ impl Service {
         serde_json::Value::Object(mp)
     }
 
-    // pub fn json_to_service(_j_val: serde_json::Value) -> Service {
-    //     todo!()
-    // }
+    pub fn to_string(&self) -> String {
+        let val = self.service_to_json();
+        serde_json::to_string(&val).unwrap()
+    }
 
-    // pub fn token_to_service(&self, token: &str) -> Service {
-    //     let mut sevo = self.clone();
-    //     sevo.set_token(token);
-    //     sevo
-    // }
+    pub fn json_to_service(j_val: serde_json::Value) -> Service {
+        use super::{Endpoint, Event};
+        let obj = j_val.as_object().unwrap();
+        let name = obj.get("name").unwrap().as_str().unwrap();
+        let host = obj.get("host").unwrap().as_str().unwrap();
+
+        let events: Vec<Event> = obj
+            .get("events")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| Event::from_str(&serde_json::to_string(x).unwrap()))
+            .collect();
+        let endpoints: Vec<Endpoint> = obj
+            .get("endpoints")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| Endpoint::from_str(&serde_json::to_string(x).unwrap()))
+            .collect();
+        let subscriptions: Vec<Event> = obj
+            .get("subscriptions")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| Event::from_str(&serde_json::to_string(x).unwrap()))
+            .collect();
+
+        Service::new(name, host, events, endpoints, subscriptions)
+    }
+
+    pub fn token_to_service(sender: &crate::communication::Sender, token: &str) -> Service {
+        use super::Endpoint;
+        use crate::communication::IPost;
+        let ep = Endpoint::from_str(&format!("{}/#", token));
+
+        let r = ep.post(sender, serde_json::Value::String("ping".to_owned()));
+        Service::json_to_service(r.unwrap().unwrap())
+    }
 }

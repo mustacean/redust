@@ -13,8 +13,8 @@ pub struct Service {
 
 impl Service {
     pub fn new(
-        name: &'static str,
-        host: &'static str,
+        name: &str,
+        host: &str,
         events: Vec<Event>,
         eps: Vec<Endpoint>,
         subs: Vec<Event>,
@@ -92,16 +92,5 @@ impl Service {
             .iter()
             .map(|x| x.to_string())
             .collect::<Vec<String>>()
-    }
-
-    pub fn to_string(&self) -> String {
-        format!(
-            "Service : {}/{}\n[numEvents : {}\nnumEndpoints : {}\nnumSubscriptions : {}]",
-            self.host(),
-            self.name(),
-            self.event_count(),
-            self.endpoint_count(),
-            self.subscription_count()
-        )
     }
 }
