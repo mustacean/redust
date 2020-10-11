@@ -1,10 +1,10 @@
 use crate::service::Service;
 
 impl Service {
-    pub fn service_to_json(&self) -> serde_json::Value {
+    pub fn to_json(&self) -> serde_json::Value {
         let sv_nm = self.name().to_owned();
         let sv_host = self.host().to_owned();
-        let sv_token = self.token().to_owned();
+        //let sv_token = self.token().to_owned();
         let evts: Vec<serde_json::Value> = self
             .event_names()
             .iter()
@@ -24,7 +24,7 @@ impl Service {
 
         let mut mp = serde_json::Map::new();
 
-        mp.insert("token".to_owned(), serde_json::Value::String(sv_token));
+        //mp.insert("token".to_owned(), serde_json::Value::String(sv_token));
         mp.insert("name".to_owned(), serde_json::Value::String(sv_nm));
         mp.insert("host".to_owned(), serde_json::Value::String(sv_host));
 
@@ -36,11 +36,11 @@ impl Service {
     }
 
     pub fn to_string(&self) -> String {
-        let val = self.service_to_json();
+        let val = self.to_json();
         serde_json::to_string(&val).unwrap()
     }
 
-    pub fn json_to_service(j_val: serde_json::Value) -> Service {
+    pub fn from_json(j_val: serde_json::Value) -> Service {
         use super::{Endpoint, Event};
         let obj = j_val.as_object().unwrap();
         let name = obj.get("name").unwrap().as_str().unwrap();
@@ -72,14 +72,5 @@ impl Service {
             .collect();
 
         Service::new(name, host, events, endpoints, subscriptions)
-    }
-
-    pub fn token_to_service(sender: &crate::communication::Sender, token: &str) -> Service {
-        use super::Endpoint;
-        use crate::communication::IPost;
-        let ep = Endpoint::from_str(&format!("{}/#", token));
-
-        let r = ep.post(sender, serde_json::Value::String("ping".to_owned()));
-        Service::json_to_service(r.unwrap().unwrap())
     }
 }

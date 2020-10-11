@@ -18,22 +18,22 @@ fn main() {
         vec![],
     );
 
-    let s_manager = Service::open(service).unwrap();
+    let s_manager = Service::open(None, service).unwrap();
 
     println!("{}", s_manager.service().to_string());
 
     let rcv = s_manager.receiver();
     println!("listening on endpoints...");
-    rcv.receive_endpoints(|endp, token, payl| {
+    rcv.receive_endpoints(|endp, sender, payl| {
         println!("received on '{}' --->  {}", endp.to_string(), payl);
 
-        let rez = endp.respond_token(
+        let rez = endp.respond(
             &rcv,
-            token,
+            sender,
             serde_json::Value::String(format!(
                 "welcome to the '{}' endpoint, dear sender; '{}'",
                 endp.to_string(),
-                token,
+                sender.token(),
             )),
         );
         if let Ok(_) = rez {

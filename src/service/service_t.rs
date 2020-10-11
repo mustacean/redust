@@ -5,7 +5,6 @@ use std::rc::Rc;
 pub struct Service {
     name: Rc<String>,
     host: Rc<String>,
-    token: Rc<String>,
     events: Rc<Vec<Event>>,
     endpoints: Rc<Vec<Endpoint>>,
     subscriptions: Rc<Vec<Event>>,
@@ -22,7 +21,6 @@ impl Service {
         Service {
             name: Rc::new(name.to_owned()),
             host: Rc::new(host.to_owned()),
-            token: Rc::new(/*format!("{}", uuid::Uuid::new_v4())*/ name.to_owned()),
             events: Rc::new(events),
             subscriptions: Rc::new(subs),
             endpoints: Rc::new(eps),
@@ -35,13 +33,6 @@ impl Service {
     pub fn host(&self) -> &str {
         &self.host
     }
-    pub fn token(&self) -> &str {
-        &self.token
-    }
-    // pub fn set_token(&mut self, token: &str) {
-    //     let yoo = Rc::get_mut(&mut self.token).unwrap();
-    //     *yoo = token.to_owned();
-    // }
 
     pub fn events(&self) -> &Vec<Event> {
         &self.events

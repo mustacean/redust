@@ -2,7 +2,10 @@ use crate::service::Service;
 use crate::service::ServiceManager;
 
 impl Service {
-    pub fn open(mut service: Service) -> Result<ServiceManager, &'static str> {
+    pub fn open(
+        parent_token: Option<String>,
+        mut service: Service,
+    ) -> Result<ServiceManager, &'static str> {
         Service::name_validity_check(service.name())?;
 
         for n in service.events() {
@@ -20,7 +23,7 @@ impl Service {
             service.name()
         )));
 
-        Ok(ServiceManager::new(service))
+        Ok(ServiceManager::new(parent_token, service))
     }
     fn name_validity_check(name: &str) -> Result<&str, &'static str> {
         if name.trim().is_empty() | name.contains("#") {

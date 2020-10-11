@@ -9,11 +9,12 @@ pub struct ServiceManager {
     receiver: Receiver,
     antenna: Antenna,
     service: Service,
+    parent: Option<String>,
 }
 
 impl ServiceManager {
-    pub fn new(service: Service) -> ServiceManager {
-        let sender = Sender::create(service.clone());
+    pub fn new(parent: Option<String>, service: Service) -> ServiceManager {
+        let sender = Sender::create(service.clone(), None);
         let sd = Rc::new(sender);
         let recv = Receiver::create(sd.clone());
         let antenna = Antenna::create(sd.clone());
@@ -23,6 +24,7 @@ impl ServiceManager {
             sender: sd,
             receiver: recv,
             antenna,
+            parent,
         }
     }
     pub fn sender(&self) -> &Sender {

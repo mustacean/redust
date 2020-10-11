@@ -1,15 +1,11 @@
 use crate::communication::Receiver;
+use crate::communication::Sender;
 use crate::service::Endpoint;
-use crate::service::Service;
 use serde_json::Value;
 
 pub trait IRespond {
-    fn respond(
-        &self,
-        recv: &Receiver,
-        service_sent: &Service,
-        response_payload: Value,
-    ) -> Result<i32, ()>;
+    fn respond(&self, recv: &Receiver, sender: &Sender, response_payload: Value)
+        -> Result<i32, ()>;
     fn respond_token(
         &self,
         recv: &Receiver,
@@ -30,7 +26,7 @@ impl IRespond for Endpoint {
         let mut mp = serde_json::Map::new();
         mp.insert(
             "from".to_owned(),
-            serde_json::Value::String(recv.sender().service().token().to_owned()),
+            serde_json::Value::String(recv.sender().token().to_owned()),
         );
         mp.insert("to".to_owned(), serde_json::Value::String(token.to_owned()));
         mp.insert("payload".to_owned(), response_payload);
@@ -42,7 +38,7 @@ impl IRespond for Endpoint {
     fn respond(
         &self,
         r: &Receiver,
-        s: &Service,
+        s: &Sender,
         v: serde_json::Value,
     ) -> std::result::Result<i32, ()> {
         self.respond_token(r, s.token(), v)
