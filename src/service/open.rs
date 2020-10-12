@@ -4,7 +4,7 @@ use crate::service::ServiceManager;
 impl Service {
     pub fn open(
         parent_token: Option<String>,
-        mut service: Service,
+        service: Service,
     ) -> Result<ServiceManager, &'static str> {
         Service::name_validity_check(service.name())?;
 
@@ -17,12 +17,6 @@ impl Service {
         for n in service.subscriptions() {
             Service::name_validity_check(n.name())?;
         }
-
-        service.add_endpoint(crate::service::Endpoint::from_str(&format!(
-            "{}/#",
-            service.name()
-        )));
-
         Ok(ServiceManager::new(parent_token, service))
     }
     fn name_validity_check(name: &str) -> Result<&str, &'static str> {

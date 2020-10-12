@@ -1,14 +1,13 @@
 use crate::communication::Sender;
 use crate::service::Endpoint;
 use crate::service::Service;
-use std::rc::Rc;
 
 pub struct Receiver {
-    sender: Rc<Sender>,
+    sender: Sender,
 }
 
 impl Receiver {
-    pub fn create(sender: Rc<Sender>) -> Receiver {
+    pub fn create(sender: Sender) -> Receiver {
         Receiver { sender }
     }
     pub fn sender(&self) -> &Sender {

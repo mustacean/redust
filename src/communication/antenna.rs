@@ -1,17 +1,16 @@
 use crate::communication::Sender;
 use crate::service::Event;
-use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct Antenna {
-    sender: Rc<Sender>,
+    sender: Sender,
 }
 impl Antenna {
-    pub fn create(sender: Rc<Sender>) -> Antenna {
+    pub fn create(sender: Sender) -> Antenna {
         Antenna { sender }
     }
     pub fn sender(&self) -> &Sender {
-        self.sender.as_ref()
+        &self.sender
     }
     pub fn receive_events(&self, action: impl Fn(&Event, &serde_json::Value)) {
         use crate::rd_tools::IRedisClient;

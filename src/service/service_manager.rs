@@ -2,39 +2,42 @@ use crate::communication::Antenna;
 use crate::communication::Receiver;
 use crate::communication::Sender;
 use crate::service::Service;
-use std::rc::Rc;
 
 pub struct ServiceManager {
-    sender: Rc<Sender>,
-    receiver: Receiver,
-    antenna: Antenna,
+    sender: Sender,
     service: Service,
     parent: Option<String>,
 }
 
 impl ServiceManager {
-    pub fn new(parent: Option<String>, service: Service) -> ServiceManager {
+    fn service_presets(service: &mut Service) {
+        service.add_endpoint(crate::service::Endpoint::from_str(&format!(
+            "{}/#",
+            service.name()
+        )));
+    }
+
+    pub fn new(parent: Option<String>, mut service: Service) -> ServiceManager {
+        if parent.is_none() {
+            ServiceManager::service_presets(&mut service);
+        }
         let sender = Sender::create(service.clone(), None);
-        let sd = Rc::new(sender);
-        let recv = Receiver::create(sd.clone());
-        let antenna = Antenna::create(sd.clone());
 
         ServiceManager {
             service,
-            sender: sd,
-            receiver: recv,
-            antenna,
+            sender,
             parent,
         }
     }
+
     pub fn sender(&self) -> &Sender {
         &self.sender
     }
-    pub fn receiver(&self) -> &Receiver {
-        &self.receiver
+    pub fn receiver(&self) -> Receiver {
+        Receiver::create(self.sender.clone())
     }
-    pub fn antenna(&self) -> &Antenna {
-        &self.antenna
+    pub fn antenna(&self) -> Antenna {
+        Antenna::create(self.sender.clone())
     }
     pub fn service(&self) -> &Service {
         &self.service
