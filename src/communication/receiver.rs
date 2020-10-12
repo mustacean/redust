@@ -40,15 +40,13 @@ impl Receiver {
             |request_body, endp| {
                 let ep_received = Endpoint::from_str(&endp);
 
-                let val: serde_json::Value = serde_json::from_str(&request_body).unwrap();
-
-                let token = val["token"].to_string();
+                let (token, payload) = super::formats::deserialize_request(&request_body);
 
                 if let Err(()) = if !(self.filter_and_action.0)(&ep_received) {
                     (func)(
                         &ep_received,
                         &Sender::clone_from_token(&self.sender(), &token),
-                        &val["payload"],
+                        &payload,
                     )
                 } else {
                     (self.filter_and_action.1)(&ep_received, self, &token)

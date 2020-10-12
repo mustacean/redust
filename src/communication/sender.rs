@@ -27,9 +27,7 @@ impl Sender {
             token: if let Some(e) = tk {
                 Rc::new(e.to_owned())
             } else {
-                Rc::new(
-                    /*format!("{}", uuid::Uuid::new_v4())*/ service.name().to_owned(),
-                )
+                Rc::new(service.name().to_owned())
             },
             service: Rc::new(service),
             client: if let Ok(x) = redis::Client::open("redis://127.0.0.1/") {

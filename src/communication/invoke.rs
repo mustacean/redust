@@ -12,7 +12,7 @@ impl IInvoker for Event {
         match crate::rd_tools::publish(
             sender.get_conn(),
             &self.to_string(),
-            serde_json::to_string(&payload).unwrap(),
+            super::formats::serialize_event_args(&payload),
         ) {
             Ok(x) => Ok(x),
             _ => Err(()),

@@ -23,17 +23,8 @@ impl IRespond for Endpoint {
     ) -> Result<i32, ()> {
         use crate::rd_tools::IRedisClient;
 
-        let mut mp = serde_json::Map::new();
-        mp.insert(
-            "from".to_owned(),
-            serde_json::Value::String(recv.sender().token().to_owned()),
-        );
-        mp.insert("to".to_owned(), serde_json::Value::String(token.to_owned()));
-        mp.insert("payload".to_owned(), response_payload);
-
-        let ss = serde_json::to_string(&serde_json::Value::Object(mp)).unwrap();
-
-        crate::rd_tools::rpush_str(recv.sender().get_conn(), token, &ss)
+        let msg = super::formats::serialize_response(recv.sender().token(), token, response_payload);
+        crate::rd_tools::rpush_str(recv.sender().get_conn(), token, &msg)
     }
     fn respond(
         &self,

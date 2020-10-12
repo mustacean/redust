@@ -10,17 +10,9 @@ impl IPost for Endpoint {
     fn post(&self, sender: &Sender, payload: Value) -> Result<Option<serde_json::Value>, ()> {
         use crate::rd_tools::IRedisClient;
 
-        let mut mp = serde_json::Map::new();
+        let msg = super::formats::serialize_request(sender.token(), payload);
 
-        mp.insert(
-            "token".to_owned(),
-            serde_json::Value::String(sender.token().to_owned()),
-        );
-        mp.insert("payload".to_owned(), payload);
-
-        let ss = serde_json::to_string(&serde_json::Value::Object(mp)).unwrap();
-
-        if let Ok(_) = crate::rd_tools::rpush_str(sender.get_conn(), &self.to_string(), &ss) {
+        if let Ok(_) = crate::rd_tools::rpush_str(sender.get_conn(), &self.to_string(), &msg) {
             if let Ok(result) =
                 crate::rd_tools::blpop_str(sender.get_conn(), &format!("\"{}\"", sender.token()), 1)
             {

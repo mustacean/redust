@@ -18,12 +18,8 @@ impl Antenna {
             self.sender().get_conn(),
             self.sender().service().subsc_names(),
             |x| {
-                let result = x.unwrap();
-                let ch = result.get_channel::<String>().unwrap();
-
-                let msg = result.get_payload::<String>().unwrap();
-
-                (action)(&Event::from_str(&ch), &serde_json::from_str(&msg).unwrap());
+                let r = super::formats::deserialize_event_args(&x.unwrap());
+                (action)(&r.0, &r.1);
             },
         )
     }
