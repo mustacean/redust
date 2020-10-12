@@ -1,38 +1,38 @@
+type Pl = serde_json::Value;
 use crate::service::Service;
+use serde_json::Map;
 
 impl Service {
-    pub fn to_json(&self) -> serde_json::Value {
+    pub fn to_json(&self) -> Pl {
         let sv_nm = self.name().to_owned();
         let sv_host = self.host().to_owned();
-        //let sv_token = self.token().to_owned();
-        let evts: Vec<serde_json::Value> = self
+        let evts: Vec<Pl> = self
             .event_names()
             .iter()
-            .map(|x| serde_json::Value::String(x.to_owned()))
+            .map(|x| Pl::String(x.to_owned()))
             .collect();
 
-        let endps: Vec<serde_json::Value> = self
+        let endps: Vec<Pl> = self
             .endpoint_names()
             .iter()
-            .map(|x| serde_json::Value::String(x.to_owned()))
+            .map(|x| Pl::String(x.to_owned()))
             .collect();
-        let subs: Vec<serde_json::Value> = self
+        let subs: Vec<Pl> = self
             .subsc_names()
             .iter()
-            .map(|x| serde_json::Value::String(x.to_owned()))
+            .map(|x| Pl::String(x.to_owned()))
             .collect();
 
-        let mut mp = serde_json::Map::new();
+        let mut mp = Map::new();
 
-        //mp.insert("token".to_owned(), serde_json::Value::String(sv_token));
-        mp.insert("name".to_owned(), serde_json::Value::String(sv_nm));
-        mp.insert("host".to_owned(), serde_json::Value::String(sv_host));
+        mp.insert("name".to_owned(), Pl::String(sv_nm));
+        mp.insert("host".to_owned(), Pl::String(sv_host));
 
-        mp.insert("events".to_owned(), serde_json::Value::Array(evts));
-        mp.insert("endpoints".to_owned(), serde_json::Value::Array(endps));
-        mp.insert("subscriptions".to_owned(), serde_json::Value::Array(subs));
+        mp.insert("events".to_owned(), Pl::Array(evts));
+        mp.insert("endpoints".to_owned(), Pl::Array(endps));
+        mp.insert("subscriptions".to_owned(), Pl::Array(subs));
 
-        serde_json::Value::Object(mp)
+        Pl::Object(mp)
     }
 
     pub fn to_string(&self) -> String {
@@ -40,7 +40,7 @@ impl Service {
         serde_json::to_string(&val).unwrap()
     }
 
-    pub fn from_json(j_val: serde_json::Value) -> Service {
+    pub fn from_json(j_val: Pl) -> Service {
         use super::{Endpoint, Event};
         let obj = j_val.as_object().unwrap();
         let name = obj.get("name").unwrap().as_str().unwrap();

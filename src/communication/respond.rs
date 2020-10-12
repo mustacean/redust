@@ -23,7 +23,7 @@ impl IRespond for Endpoint {
     ) -> Result<i32, ()> {
         use crate::rd_tools::IRedisClient;
 
-        let msg = super::formats::serialize_response(recv.sender().token(), token, response_payload);
+        let msg = super::formats::tokenize_response(recv.sender().token(), token, response_payload);
         crate::rd_tools::rpush_str(recv.sender().get_conn(), token, &msg)
     }
     fn respond(

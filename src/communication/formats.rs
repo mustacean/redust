@@ -1,60 +1,51 @@
-// > antenna.rs
-pub fn deserialize_event_args(msg: &redis::Msg) -> (crate::service::Event, serde_json::Value) {
-    let ch = msg.get_channel::<String>().unwrap();
-    let msg = msg.get_payload::<String>().unwrap();
-    (
-        crate::service::Event::from_str(&ch),
-        serde_json::from_str(&msg).expect("arguments couldn't be resolved :("),
-    )
-}
+type Pl = serde_json::Value;
+use crate::service::Event;
+use redis::Msg;
+use serde_json::Map;
+use serde_json::{from_str, to_string};
 
 // > invoke.rs
-pub fn serialize_event_args(payload: &serde_json::Value) -> String {
-    serde_json::to_string(payload).expect("arguments couldn't be serialized :(")
+pub fn serialize_event_args(payload: &Pl) -> String {
+    to_string(payload).expect("arguments couldn't be serialized :(")
 }
 
 // > post.rs
-pub fn serialize_request(token: &str, payload: serde_json::Value) -> String {
-    let mut mp = serde_json::Map::new();
+pub fn serialize_request(token: &str, payload: Pl) -> String {
+    let mut mp = Map::new();
 
-    mp.insert(
-        "token".to_owned(),
-        serde_json::Value::String(token.to_owned()),
-    );
+    mp.insert("token".to_owned(), Pl::String(token.to_owned()));
     mp.insert("payload".to_owned(), payload);
 
-    serde_json::to_string(&serde_json::Value::Object(mp))
-        .expect("request couldn't be serialized :(")
+    to_string(&Pl::Object(mp)).expect("request couldn't be serialized :(")
+}
+
+// > post.rs
+pub fn serialize_response(response: (String, String)) -> Pl {
+    from_str(&response.0).expect("couldn't serialize response :(")
+}
+
+// > antenna.rs
+pub fn deserialize_event_args(msg: &Msg) -> (Event, Pl) {
+    let ch = msg.get_channel::<String>().unwrap();
+    let msg = msg.get_payload::<String>().unwrap();
+    (
+        Event::from_str(&ch),
+        from_str(&msg).expect("arguments couldn't be resolved :("),
+    )
 }
 
 // > receiver.rs
-pub fn deserialize_request(msg: &str) -> (String, serde_json::Value) {
-    let val: serde_json::Value =
-        serde_json::from_str(&msg).expect("request couldn't be resolved :(");
-
-    let token = &val["token"];
-    let payload = &val["payload"];
-
-    (token.to_string(), payload.clone())
+pub fn detokenize_request(msg: &str) -> (String, Pl) {
+    let val: Pl = from_str(&msg).expect("request couldn't be resolved :(");
+    (val["token"].to_string(), val["payload"].clone())
 }
 
 // > respond.rs
-pub fn serialize_response(
-    from_token: &str,
-    to_token: &str,
-    response_payload: serde_json::Value,
-) -> String {
-    let mut mp = serde_json::Map::new();
-    mp.insert(
-        "from".to_owned(),
-        serde_json::Value::String(from_token.to_owned()),
-    );
-    mp.insert(
-        "to".to_owned(),
-        serde_json::Value::String(to_token.to_owned()),
-    );
+pub fn tokenize_response(from_token: &str, to_token: &str, response_payload: Pl) -> String {
+    let mut mp = Map::new();
+    mp.insert("from".to_owned(), Pl::String(from_token.to_owned()));
+    mp.insert("to".to_owned(), Pl::String(to_token.to_owned()));
     mp.insert("payload".to_owned(), response_payload);
 
-    serde_json::to_string(&serde_json::Value::Object(mp))
-        .expect("response couldn't be serialized :(")
+    to_string(&Pl::Object(mp)).expect("response couldn't be tokenized :(")
 }

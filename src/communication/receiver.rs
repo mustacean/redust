@@ -40,7 +40,7 @@ impl Receiver {
             |request_body, endp| {
                 let ep_received = Endpoint::from_str(&endp);
 
-                let (token, payload) = super::formats::deserialize_request(&request_body);
+                let (token, payload) = super::formats::detokenize_request(&request_body);
 
                 if let Err(()) = if !(self.filter_and_action.0)(&ep_received) {
                     (func)(
