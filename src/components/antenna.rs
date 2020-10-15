@@ -1,4 +1,4 @@
-use crate::communication::Sender;
+use crate::components::Sender;
 use crate::service::Event;
 
 #[derive(Clone)]
@@ -18,7 +18,7 @@ impl Antenna {
             self.sender().get_conn(),
             self.sender().service().subsc_names(),
             |x| {
-                let r = super::formats::deserialize_event_args(&x.unwrap());
+                let r = crate::communication::formats::deserialize_event_args(&x.unwrap());
                 (action)(&r.0, &r.1);
             },
         )

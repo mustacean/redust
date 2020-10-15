@@ -1,6 +1,7 @@
-use crate::communication::Antenna;
-use crate::communication::Receiver;
-use crate::communication::Sender;
+use crate::components::Antenna;
+use crate::components::Receiver;
+use crate::components::Sender;
+use crate::components::Storage;
 use crate::service::Service;
 
 pub struct ServiceManager {
@@ -32,22 +33,37 @@ impl ServiceManager {
     pub fn sender(&self) -> &Sender {
         &self.sender
     }
-    pub fn receiver(&self) -> Receiver {
-        Receiver::create(
-            self.sender.clone(),
-            (
-                Box::new(|ep| ep.name() == "#"),
-                Box::new(|ep, recv, token| {
-                    use crate::communication::IRespond;
-                    ep.respond_token(recv, token, Service::to_json(recv.sender().service()))
-                }),
-            ),
-        )
-    }
-    pub fn antenna(&self) -> Antenna {
-        Antenna::create(self.sender.clone())
-    }
+
     pub fn service(&self) -> &Service {
         &self.service
+    }
+
+    pub fn receiver(&self) -> Result<Receiver, &'static str> {
+        if self.service().endpoint_count() == 0 {
+            Err("service has no endpoints.")
+        } else {
+            Ok(Receiver::create(
+                self.sender.clone(),
+                (
+                    Box::new(|ep| ep.name() == "#"),
+                    Box::new(|ep, recv, token| {
+                        use crate::communication::IRespond;
+                        ep.respond_token(recv, token, Service::to_json(recv.sender().service()))
+                    }),
+                ),
+            ))
+        }
+    }
+
+    pub fn antenna(&self) -> Result<Antenna, &'static str> {
+        if self.service().subscription_count() == 0 {
+            Err("service has no subscriptions.")
+        } else {
+            Ok(Antenna::create(self.sender.clone()))
+        }
+    }
+
+    pub fn storage(&self) -> Result<Storage, &'static str> {
+        Ok(Storage::create(self.sender.clone()))
     }
 }

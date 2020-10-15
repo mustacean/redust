@@ -1,4 +1,4 @@
-use crate::communication::Sender;
+use crate::components::Sender;
 use crate::service::Event;
 use serde_json::Value;
 

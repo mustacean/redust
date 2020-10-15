@@ -1,4 +1,4 @@
-use crate::communication::Sender;
+use crate::components::Sender;
 use crate::service::Endpoint;
 
 pub trait IPost {

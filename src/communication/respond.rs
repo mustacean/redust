@@ -1,5 +1,4 @@
-use crate::communication::Receiver;
-use crate::communication::Sender;
+use crate::components::{Receiver, Sender};
 use crate::service::Endpoint;
 use serde_json::Value;
 

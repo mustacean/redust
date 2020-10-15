@@ -22,7 +22,7 @@ fn main() {
 
     println!("{}", s_manager.service().to_string());
 
-    let rcv = s_manager.receiver();
+    let rcv = s_manager.receiver().unwrap();
     println!("listening on endpoints...");
     rcv.receive_endpoints(|endp, sender, payl| {
         println!("received on '{}' --->  {}", endp.to_string(), payl);
