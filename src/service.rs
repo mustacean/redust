@@ -1,7 +1,6 @@
 mod endpoint_t;
 mod event_t;
 mod formats;
-mod open;
 mod service_manager;
 mod service_t;
 

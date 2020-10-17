@@ -1,36 +1,7 @@
-use crate::components::{Receiver, Sender};
-use crate::service::Endpoint;
+use crate::components::Receiver;
 use serde_json::Value;
 
-pub trait IRespond {
-    fn respond(&self, recv: &Receiver, sender: &Sender, response_payload: Value)
-        -> Result<i32, ()>;
-    fn respond_token(
-        &self,
-        recv: &Receiver,
-        token: &str,
-        response_payload: Value,
-    ) -> Result<i32, ()>;
-}
-
-impl IRespond for Endpoint {
-    fn respond_token(
-        &self,
-        recv: &Receiver,
-        token: &str,
-        response_payload: Value,
-    ) -> Result<i32, ()> {
-        use crate::rd_tools::IRedisClient;
-
-        let msg = super::formats::tokenize_response(recv.sender().token(), token, response_payload);
-        crate::rd_tools::rpush_str(recv.sender().get_conn(), token, &msg)
-    }
-    fn respond(
-        &self,
-        r: &Receiver,
-        s: &Sender,
-        v: serde_json::Value,
-    ) -> std::result::Result<i32, ()> {
-        self.respond_token(r, s.token(), v)
-    }
+pub fn respond(recv: &Receiver, token: &str, response_payload: Value) -> Result<i32, ()> {
+    let msg = super::formats::tokenize_response(&recv.sender().token(), token, response_payload);
+    crate::rd_tools::rpush_str(recv.sender().get_conn(), token, &msg)
 }

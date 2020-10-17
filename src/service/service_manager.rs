@@ -1,7 +1,4 @@
-use crate::components::Antenna;
-use crate::components::Receiver;
-use crate::components::Sender;
-use crate::components::Storage;
+use crate::components::*;
 use crate::service::Service;
 
 pub struct ServiceManager {
@@ -25,7 +22,7 @@ impl ServiceManager {
 
         ServiceManager {
             service: service.clone(),
-            sender: Sender::create(service, None),
+            sender: Sender::create(std::sync::Arc::new(service), None),
             parent,
         }
     }
@@ -46,10 +43,7 @@ impl ServiceManager {
                 self.sender.clone(),
                 (
                     Box::new(|ep| ep.name() == "#"),
-                    Box::new(|ep, recv, token| {
-                        use crate::communication::IRespond;
-                        ep.respond_token(recv, token, Service::to_json(recv.sender().service()))
-                    }),
+                    Box::new(|_, recv, _| Some(Service::to_json(&recv.sender().service()))),
                 ),
             ))
         }

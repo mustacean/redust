@@ -14,3 +14,15 @@ pub fn publish<T: redis::ToRedisArgs>(
 ) -> RedisResult<i32> {
     conn.publish::<&str, T, i32>(ch_name, msg)
 }
+
+pub async fn receive_async(conn: Connection, chs: Vec<String>, action: impl Fn(RedisResult<Msg>)) {
+    receive(conn, chs, action)
+}
+
+pub async fn publish_async<T: redis::ToRedisArgs>(
+    conn: Connection,
+    ch_name: &str,
+    msg: T,
+) -> RedisResult<i32> {
+    publish(conn, ch_name, msg)
+}

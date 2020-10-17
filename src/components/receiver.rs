@@ -5,7 +5,7 @@ pub struct Receiver {
     sender: Sender,
     filter_and_action: (
         Box<dyn Fn(&Endpoint) -> bool>,
-        Box<dyn Fn(&Endpoint, &Receiver, &str) -> Result<i32, ()>>,
+        Box<dyn Fn(&Endpoint, &Receiver, &str) -> Option<serde_json::Value>>,
     ),
 }
 
@@ -14,7 +14,7 @@ impl Receiver {
         sender: Sender,
         filter_and_action: (
             Box<dyn Fn(&Endpoint) -> bool>,
-            Box<dyn Fn(&Endpoint, &Receiver, &str) -> Result<i32, ()>>,
+            Box<dyn Fn(&Endpoint, &Receiver, &str) -> Option<serde_json::Value>>,
         ),
     ) -> Receiver {
         Receiver {
@@ -30,9 +30,8 @@ impl Receiver {
 impl Receiver {
     pub fn receive_endpoints(
         &self,
-        func: impl Fn(&Endpoint, &Sender, &serde_json::Value) -> Result<i32, ()>,
+        func: impl Fn(&Endpoint, &Sender, &serde_json::Value) -> Option<serde_json::Value>,
     ) {
-        use crate::rd_tools::IRedisClient;
         crate::rd_tools::blpop_str_multiple(
             self.sender().get_conn(),
             &self.sender().service().endpoint_names(),
@@ -40,9 +39,10 @@ impl Receiver {
             |request_body, endp| {
                 let ep_received = Endpoint::from_str(&endp);
 
-                let (token, payload) = crate::communication::formats::detokenize_request(&request_body);
+                let (token, payload) =
+                    crate::communication::formats::detokenize_request(&request_body);
 
-                if let Err(()) = if !(self.filter_and_action.0)(&ep_received) {
+                let returned = if !(self.filter_and_action.0)(&ep_received) {
                     (func)(
                         &ep_received,
                         &Sender::clone_from_token(&self.sender(), &token),
@@ -50,8 +50,9 @@ impl Receiver {
                     )
                 } else {
                     (self.filter_and_action.1)(&ep_received, self, &token)
-                } {
-                    panic!("we couldn't act on the request :/")
+                };
+                if let Err(()) = crate::communication::respond(self, &token, returned.unwrap()) {
+                    panic!("something went wrong while we receive");
                 }
             },
         );

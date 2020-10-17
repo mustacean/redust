@@ -3,6 +3,6 @@ mod invoke;
 mod post;
 mod respond;
 
-pub use invoke::IInvoker;
-pub use post::IPost;
-pub use respond::IRespond;
+pub use invoke::{invoke, invoke_async};
+pub use post::post;
+pub use respond::respond;

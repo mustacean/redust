@@ -1,4 +1,4 @@
-use redust::communication::IPost;
+use redust::communication::post;
 use redust::service::Endpoint;
 use redust::service::Service;
 
@@ -16,6 +16,6 @@ fn main() {
 
     println!(
         "response : {:?}",
-        ep_.post(&sd, serde_json::Value::String(format!("ping")))
+        post(&ep_, &sd, serde_json::Value::String(format!("ping")))
     );
 }

@@ -11,6 +11,13 @@ pub struct Service {
 }
 
 impl Service {
+    pub fn open(
+        parent_token: Option<String>,
+        service: Service,
+    ) -> Result<super::ServiceManager, &'static str> {
+        Ok(super::ServiceManager::new(parent_token, service))
+    }
+
     pub fn new(
         name: &str,
         host: &str,
@@ -18,6 +25,22 @@ impl Service {
         eps: Vec<Endpoint>,
         subs: Vec<Event>,
     ) -> Service {
+        fn name_validity_check(name: &str) {
+            if name.trim().is_empty() | name.contains("#") {
+                panic!("invalid naming attempt.!!");
+            }
+        }
+        name_validity_check(name);
+
+        for n in &events {
+            name_validity_check(n.name());
+        }
+        for n in &eps {
+            name_validity_check(n.name());
+        }
+        for n in &subs {
+            name_validity_check(n.name());
+        }
         Service {
             name: Rc::new(name.to_owned()),
             host: Rc::new(host.to_owned()),

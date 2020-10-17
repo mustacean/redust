@@ -41,8 +41,6 @@ impl<'t> List<'t> {
     }
 
     pub fn size(&self) -> usize {
-        use crate::rd_tools::IRedisClient;
-
         if let Ok(i) = redis::cmd("llen")
             .arg(format!("{}{}", List::<'t>::PREFIX, self.name))
             .query::<usize>(&mut self.sender.get_conn())
@@ -59,7 +57,6 @@ impl<'t> Iterator for List<'t> {
     fn next(&mut self) -> Option<<Self as std::iter::Iterator>::Item> {
         //
 
-        use crate::rd_tools::IRedisClient;
         let res = redis::cmd("lrange")
             .arg(format!("{}{}", List::<'t>::PREFIX, self.name))
             .arg(self.cursor.get())

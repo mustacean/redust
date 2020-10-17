@@ -13,7 +13,7 @@ impl Antenna {
         &self.sender
     }
     pub fn receive_events(&self, action: impl Fn(&Event, &serde_json::Value)) {
-        use crate::rd_tools::IRedisClient;
+        
         crate::rd_tools::receive(
             self.sender().get_conn(),
             self.sender().service().subsc_names(),
