@@ -86,3 +86,18 @@ pub fn blpop_buffers(mut conn: Connection, list_name: &str, time_out: u32, mut w
         }
     }
 }
+
+//
+
+pub async fn blpop_str_multiple_async(
+    mut conn: redis::Connection,
+    lists: &Vec<String>,
+    time_out: u32,
+    action: impl Fn(String, String),
+) {
+    loop {
+        if let Ok((a, b)) = blpop(&mut conn, lists.clone(), time_out) {
+            (action)(a, b)
+        }
+    }
+}

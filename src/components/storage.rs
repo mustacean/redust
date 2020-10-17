@@ -2,22 +2,21 @@ use crate::components::Sender;
 
 pub struct Storage {
     sender: Sender,
+    endpoint_strings: Vec<String>,
 }
 impl Storage {
-    pub fn create(sender: Sender) -> Storage {
-        Storage { sender }
+    pub fn create(sender: Sender, endpoint_strings: Vec<String>) -> Storage {
+        Storage {
+            sender,
+            endpoint_strings,
+        }
     }
     pub fn sender(&self) -> &Sender {
         &self.sender
     }
 
     pub fn list<'t>(&'t self, ep_string: &'t str) -> List<'t> {
-        if self
-            .sender()
-            .service()
-            .endpoint_names()
-            .contains(&ep_string.to_owned())
-        {
+        if self.endpoint_strings.contains(&ep_string.to_owned()) {
             return List::new(ep_string, &self.sender);
         }
         panic!("unknown endpoint!")

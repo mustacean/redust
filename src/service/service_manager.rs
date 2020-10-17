@@ -22,7 +22,7 @@ impl ServiceManager {
 
         ServiceManager {
             service: service.clone(),
-            sender: Sender::create(std::sync::Arc::new(service), None),
+            sender: Sender::create(&service.name()),
             parent,
         }
     }
@@ -39,12 +39,17 @@ impl ServiceManager {
         if self.service().endpoint_count() == 0 {
             Err("service has no endpoints.")
         } else {
+            let sv = self.service().clone();
             Ok(Receiver::create(
                 self.sender.clone(),
                 (
                     Box::new(|ep| ep.name() == "#"),
-                    Box::new(|_, recv, _| Some(Service::to_json(&recv.sender().service()))),
+                    Box::new(move |_, _, _| {
+                        //
+                        Some(Service::to_json(&sv))
+                    }),
                 ),
+                self.service().endpoint_names(),
             ))
         }
     }
@@ -53,11 +58,17 @@ impl ServiceManager {
         if self.service().subscription_count() == 0 {
             Err("service has no subscriptions.")
         } else {
-            Ok(Antenna::create(self.sender.clone()))
+            Ok(Antenna::create(
+                self.sender.clone(),
+                self.service().subsc_names(),
+            ))
         }
     }
 
     pub fn storage(&self) -> Result<Storage, &'static str> {
-        Ok(Storage::create(self.sender.clone()))
+        Ok(Storage::create(
+            self.sender.clone(),
+            self.service().endpoint_names(),
+        ))
     }
 }

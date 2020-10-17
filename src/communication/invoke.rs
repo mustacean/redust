@@ -13,25 +13,25 @@ pub fn invoke(ev: &Event, sender: &Sender, payload: Value) -> Result<i32, ()> {
     }
 }
 
-pub async fn invoke_async(
-    conn: redis::Connection,
-    payload: &str,
-) -> Result<i32, redis::RedisError> {
-    crate::rd_tools::publish_async(conn, "test", payload).await
-}
+// pub async fn invoke_async(
+//     conn: redis::Connection,
+//     payload: &str,
+// ) -> Result<i32, redis::RedisError> {
+//     crate::rd_tools::publish_async(conn, "test", payload).await
+// }
 
-#[test]
-fn test_async_invoking() {
-    let redo_con = redis::Client::open("redis://127.0.0.1/").unwrap();
-    let me = async {
-        for _ in 0..5 {
-            println!(
-                "sus lan : {}",
-                invoke_async(redo_con.get_connection().unwrap(), "evqweqweq")
-                    .await
-                    .unwrap()
-            )
-        }
-    };
-    futures::executor::block_on(me);
-}
+// #[test]
+// fn test_async_invoking() {
+//     let redo_con = redis::Client::open("redis://127.0.0.1/").unwrap();
+//     let me = async {
+//         for _ in 0..5 {
+//             println!(
+//                 "sus lan : {}",
+//                 invoke_async(redo_con.get_connection().unwrap(), "evqweqweq")
+//                     .await
+//                     .unwrap()
+//             )
+//         }
+//     };
+//     futures::executor::block_on(me);
+// }

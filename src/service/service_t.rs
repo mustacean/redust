@@ -1,13 +1,13 @@
 use crate::service::{Endpoint, Event};
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct Service {
-    name: Rc<String>,
-    host: Rc<String>,
-    events: Rc<Vec<Event>>,
-    endpoints: Rc<Vec<Endpoint>>,
-    subscriptions: Rc<Vec<Event>>,
+    name: Arc<String>,
+    host: Arc<String>,
+    events: Arc<Vec<Event>>,
+    endpoints: Arc<Vec<Endpoint>>,
+    subscriptions: Arc<Vec<Event>>,
 }
 
 impl Service {
@@ -42,11 +42,11 @@ impl Service {
             name_validity_check(n.name());
         }
         Service {
-            name: Rc::new(name.to_owned()),
-            host: Rc::new(host.to_owned()),
-            events: Rc::new(events),
-            subscriptions: Rc::new(subs),
-            endpoints: Rc::new(eps),
+            name: Arc::new(name.to_owned()),
+            host: Arc::new(host.to_owned()),
+            events: Arc::new(events),
+            subscriptions: Arc::new(subs),
+            endpoints: Arc::new(eps),
         }
     }
 
@@ -77,7 +77,7 @@ impl Service {
     }
 
     pub fn add_endpoint(&mut self, ep: Endpoint) {
-        let yoo = Rc::get_mut(&mut self.endpoints).unwrap();
+        let yoo = Arc::get_mut(&mut self.endpoints).unwrap();
         yoo.push(ep);
     }
     // pub fn add_event(&mut self, ev: Event) {
