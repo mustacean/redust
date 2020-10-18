@@ -44,18 +44,20 @@ impl Receiver {
             |request_body: String, endp: String| {
                 let ep_received = Endpoint::from_str(&endp);
                 let (token, payload) = detokenize_request(&request_body);
-                let returned = if !(self.filter_and_action.0)(&ep_received) {
-                    (func)(&ep_received, &Sender::create(&token), &payload)
-                } else {
-                    (self.filter_and_action.1)(&ep_received, self, &token)
-                };
-                let returned = if let Some(x) = returned {
-                    x
-                } else {
-                    serde_json::Value::Null
-                };
-                if let Err(()) = respond(self, &token, returned) {
-                    panic!("something went wrong while responding :(");
+                if self.endpoint_strings.contains(&endp) {
+                    let returned = if !(self.filter_and_action.0)(&ep_received) {
+                        (func)(&ep_received, &Sender::create(&token), &payload)
+                    } else {
+                        (self.filter_and_action.1)(&ep_received, self, &token)
+                    };
+                    let returned = if let Some(x) = returned {
+                        x
+                    } else {
+                        serde_json::Value::Null
+                    };
+                    if let Err(()) = respond(self, &token, returned) {
+                        panic!("something went wrong while responding :(");
+                    }
                 }
             },
         )

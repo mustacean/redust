@@ -19,10 +19,10 @@ impl ServiceManager {
 
     pub fn new(parent: Option<String>, mut service: Service) -> ServiceManager {
         ServiceManager::service_presets(parent.is_none(), &mut service);
-
+        let nm = service.name().to_owned();
         ServiceManager {
-            service: service.clone(),
-            sender: Sender::create(&service.name()),
+            service,
+            sender: Sender::create(&nm),
             parent,
         }
     }
@@ -43,7 +43,7 @@ impl ServiceManager {
             Ok(Receiver::create(
                 self.sender.clone(),
                 (
-                    Box::new(|ep| ep.name() == "#"),
+                    Box::new(|ep| ep.name().contains("#")),
                     Box::new(move |_, _, _| {
                         //
                         Some(Service::to_json(&sv))

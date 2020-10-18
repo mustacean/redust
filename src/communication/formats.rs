@@ -9,6 +9,16 @@ pub fn serialize_event_args(payload: &Pl) -> String {
     to_string(payload).expect("arguments couldn't be serialized :(")
 }
 
+// > antenna.rs
+pub fn deserialize_event_args(msg: &Msg) -> (Event, Pl) {
+    let ch = msg.get_channel::<String>().unwrap();
+    let msg = msg.get_payload::<String>().unwrap();
+    (
+        Event::from_str(&ch),
+        from_str(&msg).expect("arguments couldn't be resolved :("),
+    )
+}
+
 // > post.rs
 pub fn serialize_request(token: &str, payload: Pl) -> String {
     let mut mp = Map::new();
@@ -22,16 +32,6 @@ pub fn serialize_request(token: &str, payload: Pl) -> String {
 // > post.rs
 pub fn serialize_response(response: (String, String)) -> Pl {
     from_str(&response.0).expect("couldn't serialize response :(")
-}
-
-// > antenna.rs
-pub fn deserialize_event_args(msg: &Msg) -> (Event, Pl) {
-    let ch = msg.get_channel::<String>().unwrap();
-    let msg = msg.get_payload::<String>().unwrap();
-    (
-        Event::from_str(&ch),
-        from_str(&msg).expect("arguments couldn't be resolved :("),
-    )
 }
 
 // > receiver.rs
